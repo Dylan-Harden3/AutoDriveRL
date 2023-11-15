@@ -1,1 +1,1 @@
-# csce-642-project
+# CSCE 642 Project
