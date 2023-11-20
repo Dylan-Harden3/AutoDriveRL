@@ -9,7 +9,6 @@ import torch.nn.functional as F
 import numpy as np
 
 from torch.optim import AdamW
-from lib import plotting
 
 
 env = gym.make('highway-v0', render_mode='human')
