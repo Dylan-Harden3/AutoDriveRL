@@ -12,7 +12,7 @@ class A2C():
     def __init__(self, env, steps, hidden_neurons, lr, gamma):
         self.env = env
         self.steps = steps
-        self.actor_critic = self.a2c_network(self.env.observation_space.shape, hidden_neurons, self.env.action_space.n)
+        self.actor_critic = self.a2c_network(self.env.observation_space.shape[0], hidden_neurons, self.env.action_space.n)
         self.optimizer = keras.optimizers.Adam(learning_rate=lr)
         self.discount_factor = gamma
 
@@ -29,18 +29,18 @@ class A2C():
 
     def select_action(self, state):
         state = tf.convert_to_tensor(state, dtype=tf.float64)
-        probs, value = self.actor_critic(state)
+        ego_state = state[0]
+        ego_state = tf.expand_dims(ego_state, 0)
+        ego_probs, value = self.actor_critic(ego_state)
 
-        ego_probs = np.array(probs[0])
-        ego_probs /= ego_probs.sum()
-        action = np.random.choice(len(ego_probs), p=ego_probs)
+        action = np.random.choice(self.env.action_space.n, p=np.squeeze(ego_probs))
 
-        return action, ego_probs[action], value[0]
+        return action, ego_probs[0, action], value[0, 0]
 
 
     def update_actor_critic(self, advantage, prob, value, tape):
-        actor_loss = tf.reduce_mean(self.actor_loss(advantage, prob))
-        critic_loss = tf.reduce_mean(self.critic_loss(advantage, value))
+        actor_loss = self.actor_loss(advantage, prob)
+        critic_loss = self.critic_loss(advantage, value)
         loss = actor_loss + critic_loss
 
         grads = tape.gradient(loss, self.actor_critic.trainable_variables, unconnected_gradients=tf.UnconnectedGradients.ZERO)
@@ -59,12 +59,13 @@ class A2C():
 
                 next_state_tensor = tf.convert_to_tensor(next_state)
                 _, next_value = self.actor_critic(next_state_tensor)
-                next_value = next_value[0]
+                next_value = next_value[0, 0]
 
                 if done:
                     next_value = next_value * 0
                 
-                advantage = reward + (self.discount_factor * next_value) - value
+                advantage = (reward + (self.discount_factor * next_value)) - value
+
                 self.update_actor_critic(advantage, prob, value, tape)
                 total_reward += reward
 
