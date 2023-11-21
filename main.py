@@ -9,7 +9,14 @@ from matplotlib import pyplot as plt
 
 
 def main():
-    env = gym.make('highway-v0', render_mode='human')
+    env = gym.make('highway-fast-v0', render_mode='human')
+    env.config["duration"] = 120
+    #env.config["lane_change_reward"] = 0.05
+    env.config["right_lane_reward"] = 0.2
+    env.config["collision_reward"] = -10
+    env.config["high_speed_reward"] = 0.8
+    env.config["reward_speed_range"] = [30, 40]
+    env.config["vehicles_count"] = 60
 
     # Hyperparameters
     num_episodes = 3000
@@ -33,6 +40,7 @@ def main():
         print("Reward:", reward, "| Steps:", steps)
         episode_end = time.time()
         if (episode_end - episode_start > 40.0):
+            print("Time limit reached")
             break
     end = time.time()
     print("Finished in:", end - start, "seconds")
