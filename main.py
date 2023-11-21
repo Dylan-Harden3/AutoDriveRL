@@ -25,11 +25,15 @@ def main():
 
     start = time.time()
     for episode in range(1, num_episodes + 1):
+        episode_start = time.time()
         print("Episode: ", episode)
         reward, steps = actor_critic_agent.train_episode()
         episode_rewards.append(reward)
         max_reward = max(max_reward, reward)
         print("Reward:", reward, "| Steps:", steps)
+        episode_end = time.time()
+        if (episode_end - episode_start > 40.0):
+            break
     end = time.time()
     print("Finished in:", end - start, "seconds")
     print("Max reward achieved:", max_reward)
