@@ -6,20 +6,22 @@ from stable_baselines3.common.env_util import make_vec_env
 
 
 class A2CBaseline():
-    def __init__(self, env, steps, lr, gamma):
+    def __init__(self, env, training_steps, testing_steps, lr, gamma):
         self.env = env
-        self.steps = steps
+        self.training_steps = training_steps
+        self.testing_steps = testing_steps
         self.model = A2C("MlpPolicy", env, learning_rate=lr, gamma=gamma, use_rms_prop=False)
 
-    def model_learn(self):
-        self.model.learn(total_timesteps=self.steps, progress_bar=True)
+    def train_model(self):
+        self.model.learn(total_timesteps=self.training_steps, progress_bar=True)
+        self.model.save("a2c_baseline")
     
-    def train_episode(self):
+    def model_predict(self):
         total_reward = 0
         total_steps = 0
         action_distribution = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
         state, _ = self.env.reset()
-        for step in range(1, self.steps + 1):
+        for step in range(1, self.testing_steps + 1):
             total_steps = step
             action, _ = self.model.predict(state)
             action_distribution[int(action)] += 1

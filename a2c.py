@@ -9,9 +9,10 @@ from tensorflow.keras import layers
 
 
 class A2C():
-    def __init__(self, env, steps, hidden_neurons, lr, gamma):
+    def __init__(self, env, training_steps, testing_steps, hidden_neurons, lr, gamma):
         self.env = env
-        self.steps = steps
+        self.training_steps = training_steps
+        self.testing_steps = testing_steps
         self.actor_critic = self.a2c_network(self.env.observation_space.shape[0], hidden_neurons, self.env.action_space.n)
         self.optimizer = keras.optimizers.Adam(learning_rate=lr)
         self.discount_factor = gamma
@@ -49,12 +50,11 @@ class A2C():
 
     def train_episode(self):
         state, _ = self.env.reset()
-        total_reward = 0
-        total_steps = 0
+        rewards = []
         action_distribution = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
-        for step in range(1, self.steps + 1):
+        for step in range(1, self.training_steps + 1):
+            print("Step:", step, "out of", self.training_steps)
             with tf.GradientTape() as tape:
-                total_steps = step
                 action, prob, value = self.select_action(state)
                 action_distribution[int(action)] += 1
                 next_state, reward, done, _, _ = self.env.step(action)
@@ -69,15 +69,36 @@ class A2C():
                 advantage = (reward + (self.discount_factor * next_value)) - value
 
                 self.update_actor_critic(advantage, prob, value, tape)
-                total_reward += reward
+                rewards.append(reward)
 
                 if done:
-                    break
+                    state, _ = self.env.reset()
+                else:
+                    state = next_state
 
-                state = next_state
+        self.actor_critic.save("a2c_network.h5")
+        return action_distribution, rewards
+
+    def model_predict(self):
+        total_reward = 0
+        total_steps = 0
+        action_distribution = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
+        state, _ = self.env.reset()
+        for step in range(1, self.testing_steps + 1):
+            total_steps = step
+            probs, _ = self.actor_critic.predict(state)
+            action = np.argmax(probs[0])
+            action_distribution[int(action)] += 1
+            next_state, reward, done, _, _ = self.env.step(action)
+
+            total_reward += reward
+
+            if done:
+                break
+
+            state = next_state
 
         return total_reward, total_steps, action_distribution
-
 
     def actor_loss(self, advantage, prob):
         loss = -tf.math.log(prob) * advantage
