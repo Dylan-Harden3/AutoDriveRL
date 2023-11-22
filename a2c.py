@@ -51,10 +51,12 @@ class A2C():
         state, _ = self.env.reset()
         total_reward = 0
         total_steps = 0
+        action_distribution = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
         for step in range(1, self.steps + 1):
             with tf.GradientTape() as tape:
                 total_steps = step
                 action, prob, value = self.select_action(state)
+                action_distribution[int(action)] += 1
                 next_state, reward, done, _, _ = self.env.step(action)
 
                 next_state_tensor = tf.convert_to_tensor(next_state)
@@ -74,7 +76,7 @@ class A2C():
 
                 state = next_state
 
-        return total_reward, total_steps
+        return total_reward, total_steps, action_distribution
 
 
     def actor_loss(self, advantage, prob):

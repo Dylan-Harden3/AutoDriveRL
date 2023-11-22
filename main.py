@@ -5,22 +5,26 @@ import getopt, sys
 
 from ddqn import DDQN
 from a2c import A2C
-from matplotlib import pyplot as plt
+from a2c_baseline import A2CBaseline
+from plotting import Plotting
 
 
 
 def main(argv):
     # Hyperparameters
-    num_episodes = 3000
+    num_episodes = 500
     steps = 1000
-    neurons = 128
-    lr = 0.001
-    gamma = 0.99
-    duration = 120
+    baseline_steps = 7500
+    neurons = 256
+    lr = 0.0001
+    gamma = 0.95
+    duration = 300
 
-    env = gym.make('highway-fast-v0', render_mode='human')
+    # Environment configuration parameters
+    env = gym.make('highway-v0', render_mode='human')
+    env.config["lanes_count"] = 3
     env.config["duration"] = duration
-    env.config["lane_change_reward"] = 0.05
+    env.config["lane_change_reward"] = 0
     env.config["right_lane_reward"] = 0.2
     env.config["collision_reward"] = -10
     env.config["high_speed_reward"] = 0.8
@@ -28,14 +32,15 @@ def main(argv):
     env.config["vehicles_count"] = 60
 
     try:
-        opts, _ = getopt.getopt(argv, "he:s:n:l:g:d:", ["help=", "episodes=", "steps=", "neurons=", "learning rate=", "gamma=", "duration="])
+        opts, _ = getopt.getopt(argv, "he:s:n:l:g:d:b:", ["help=", "episodes=", "steps=", "neurons=", 
+                                                        "learning rate=", "gamma=", "duration=", "baseline steps="])
     except getopt.GetoptError:
-        print('Usage: main.py [-h <help>] [-e <episodes>] [-s <steps>] [-n <neurons>] [-l <lr>] [-g <gamma>] [-d <duration>]')
+        print('Usage: main.py [-h <help>] [-e <episodes>] [-s <steps>] [-n <neurons>] [-l <learning rate>] [-g <gamma>] [-d <duration>] [-n <neurons>] [-b <baseline steps>]')
         sys.exit(2)
 
     for opt, arg in opts:
         if opt == '-h':
-            print('Usage: main.py [-e <episodes>] [-s <steps>] [-n <neurons>] [-l <lr>] [-g <gamma>] [-d <duration>]')
+            print('Usage: main.py [-e <episodes>] [-s <steps>] [-n <neurons>] [-l <lr>] [-g <gamma>] [-d <duration>] [-b <baseline steps>]')
             sys.exit()
         elif opt in ("-e", "--episodes"):
             num_episodes = int(arg)
@@ -50,42 +55,92 @@ def main(argv):
         elif opt in ("-d", "--duration"):
             duration = float(arg)
             env.config["duration"] = duration
+        elif opt in ("-b", "--baselinesteps"):
+            baseline_steps = int(arg)
 
     actor_critic_agent = A2C(env=env, steps=steps, hidden_neurons=neurons, lr=lr, gamma=gamma)
-    
-    max_reward = 0
-    episode_rewards = []
+    actor_critic_baseline = A2CBaseline(env=env, steps=baseline_steps, lr=lr, gamma=gamma)
 
-    start = time.time()
+    print("Baseline Training")
+    actor_critic_baseline.model_learn()
+
+    baseline_max_reward = 0
+    baseline_episode_rewards = []
+    baseline_episode_steps = []
+
+    print("Baseline Prediction")
+    baseline_total_steps = 0
+    baseline_start = time.time()
+    baseline_action_distribution = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
     for episode in range(1, num_episodes + 1):
         episode_start = time.time()
         print("Episode: ", episode)
-        reward, steps = actor_critic_agent.train_episode()
+        reward, steps, action_distribution = actor_critic_baseline.train_episode()
+        for key, _ in baseline_action_distribution.items():
+            baseline_action_distribution[key] += action_distribution[key]
+        baseline_total_steps += steps
+        baseline_episode_rewards.append(reward)
+        baseline_episode_steps.append(steps)
+        baseline_max_reward = max(baseline_max_reward, reward)
+        print("Reward:", reward, "| Steps:", steps)
+        episode_end = time.time()
+        if (episode_end - episode_start > duration):
+            print("Time limit reached")
+            break
+    baseline_end = time.time()
+    baseline_time = baseline_end - baseline_start
+    
+    max_reward = 0
+    episode_rewards = []
+    episode_steps = []
+
+    print("A2C Prediction")
+    total_steps = 0
+    a2c_start = time.time()
+    a2c_action_distribution = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
+    for episode in range(1, num_episodes + 1):
+        episode_start = time.time()
+        print("Episode: ", episode)
+        reward, steps, action_distribution = actor_critic_agent.train_episode()
+        for key, _ in a2c_action_distribution.items():
+            a2c_action_distribution[key] += action_distribution[key]
+        total_steps += steps
         episode_rewards.append(reward)
+        episode_steps.append(steps)
         max_reward = max(max_reward, reward)
         print("Reward:", reward, "| Steps:", steps)
         episode_end = time.time()
         if (episode_end - episode_start > duration):
             print("Time limit reached")
             break
-    end = time.time()
-    print("Finished in:", end - start, "seconds")
-    print("Max reward achieved:", max_reward)
+    a2c_end = time.time()
+    a2c_time = a2c_end - a2c_start
 
-    #Plot average rewards 
-    average_rewards = [sum(episode_rewards[:i+1]) / len(episode_rewards[:i+1]) for i in range(len(episode_rewards))]
-    plt.plot(average_rewards)
-    plt.xlabel('Episodes')
-    plt.ylabel('Average Reward')
-    plt.title('Average Reward over Time')
-    plt.show()
-    
-    #Plot episodic rewards
-    plt.plot(episode_rewards)
-    plt.xlabel('Episodes')
-    plt.ylabel('Reward per Episode')
-    plt.title('Episode Reward over Time')
-    plt.show()
+    # Convergence speed
+    print("Baseline prediction finished in:", baseline_time, "seconds")
+    print("A2C finished in:", a2c_time, "seconds")
+
+    print("Baseline total steps:", baseline_total_steps)
+    print("A2C total steps:", total_steps)
+
+    # Max reward
+    print("Max baseline reward achieved:", baseline_max_reward)
+    print("Max A2C reward achieved:", max_reward)
+
+    plotter = Plotting()
+    # Average episode rewards
+    plotter.average_episodic_plot(baseline_episode_rewards, episode_rewards, "Reward")
+
+    # Average episode rewards
+    plotter.episodic_plot(baseline_episode_rewards, episode_rewards, "Reward")
+
+    # Episode length or number of steps taken
+    plotter.episodic_plot(baseline_episode_steps, episode_steps, "Steps")
+
+    # Action distribution
+    plotter.bar_graph(baseline_action_distribution, a2c_action_distribution)
+
+
 
 
 
