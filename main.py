@@ -15,7 +15,7 @@ from tensorflow.keras import models
 
 def main(argv):
     # Hyperparameters
-    training_steps = 5
+    training_steps = 7500
     num_episodes = 100 
     testing_steps = 1000
     neurons = 256
