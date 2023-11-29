@@ -4,10 +4,10 @@ import tensorflow as tf
 from tensorflow import keras
 import time
 
-from a2c import A2C
-from a2c_baseline import A2CBaseline
+from agents.a2c import A2C
+from baselines.a2c_baseline import A2CBaseline
 
-def prediction(episodes, agent, duration):
+def prediction(episodes, agent, duration, model):
     training_steps = 0
     max_reward = 0
     episode_rewards = []
@@ -16,7 +16,7 @@ def prediction(episodes, agent, duration):
     for episode in range(1, episodes + 1):
         episode_start = time.time()
         print("Episode: ", episode)
-        reward, steps, predicted_action_distribution = agent.model_predict()
+        reward, steps, predicted_action_distribution = agent.model_predict(model)
         for key, _ in action_distribution.items():
             action_distribution[key] += predicted_action_distribution[key]
         training_steps += steps
@@ -27,5 +27,5 @@ def prediction(episodes, agent, duration):
         episode_end = time.time()
         if (episode_end - episode_start > duration):
             print("Time limit reached")
-        break
+            break
     return training_steps, max_reward, episode_rewards, episode_steps, action_distribution

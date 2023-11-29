@@ -76,17 +76,17 @@ class A2C():
                 else:
                     state = next_state
 
-        self.actor_critic.save("a2c_network.h5")
+        self.actor_critic.save("saved models/a2c_network.h5")
         return action_distribution, rewards
 
-    def model_predict(self):
+    def model_predict(self, model):
         total_reward = 0
         total_steps = 0
         action_distribution = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
         state, _ = self.env.reset()
         for step in range(1, self.testing_steps + 1):
             total_steps = step
-            probs, _ = self.actor_critic.predict(state)
+            probs, _ = model.predict(state)
             action = np.argmax(probs[0])
             action_distribution[int(action)] += 1
             next_state, reward, done, _, _ = self.env.step(action)

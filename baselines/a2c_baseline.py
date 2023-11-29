@@ -14,16 +14,16 @@ class A2CBaseline():
 
     def train_model(self):
         self.model.learn(total_timesteps=self.training_steps, progress_bar=True)
-        self.model.save("a2c_baseline")
+        self.model.save("saved models/a2c_baseline")
     
-    def model_predict(self):
+    def model_predict(self, model):
         total_reward = 0
         total_steps = 0
         action_distribution = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
         state, _ = self.env.reset()
         for step in range(1, self.testing_steps + 1):
             total_steps = step
-            action, _ = self.model.predict(state)
+            action, _ = model.predict(state)
             action_distribution[int(action)] += 1
             next_state, reward, done, _, _ = self.env.step(action)
 

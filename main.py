@@ -4,19 +4,20 @@ import time
 import getopt, sys
 import os
 
-from ddqn import DDQN
-from a2c import A2C
-from a2c_baseline import A2CBaseline
-from evaluation import *
-from plotting import Plotting
+from agents.ddqn import DDQN
+from agents.a2c import A2C
+from baselines.a2c_baseline import A2CBaseline
+from helpers.evaluation import *
+from helpers.plotting import Plotting
 from tensorflow.keras import models
+from stable_baselines3 import A2C as A2C3
 
 
 
 def main(argv):
     # Hyperparameters
-    training_steps = 7500
-    num_episodes = 100 
+    training_steps = 10000
+    num_episodes = 10
     testing_steps = 1000
     neurons = 256
     lr = 0.0001
@@ -33,6 +34,7 @@ def main(argv):
     env.config["high_speed_reward"] = 0.8
     env.config["reward_speed_range"] = [30, 40]
     env.config["vehicles_count"] = 60
+    env.config["vehicles_density"] = 2
 
     try:
         opts, _ = getopt.getopt(argv, "he:s:t:n:l:g:d:", ["help=", "episodes=", "steps=", "testing steps=" "neurons=", 
@@ -71,7 +73,6 @@ def main(argv):
     training_action_distribution, training_rewards = actor_critic_agent.train_episode()
     a2c_training_end = time.time()
     a2c_training_time = a2c_training_end - a2c_training_start
-    actor_critic_agent.actor_critic.save("a2c.model.h5")
 
     # Training baseline
     print("Baseline Training")
@@ -81,33 +82,33 @@ def main(argv):
     baseline_time = baseline_end - baseline_start
 
     # Testing A2C
+    model = models.load_model("saved models/a2c_network.h5")
     print("A2C Prediction")
-    actor_critic_agent.env.config["lanes_count"] = 3
+    actor_critic_agent.env.config["lanes_count"] = 5
     actor_critic_agent.env.config["vehicles_count"] = 60
+    actor_critic_baseline.env.config["vehicles_density"] = 2
 
     a2c_eval_start = time.time()
-    eval_training_steps, eval_max_reward, eval_episode_rewards, eval_episode_steps, eval_action_distribution = prediction(episodes=num_episodes, agent=actor_critic_agent, duration=duration)
+    eval_prediction_steps, eval_max_reward, eval_episode_rewards, eval_episode_steps, eval_action_distribution = prediction(episodes=num_episodes, agent=actor_critic_agent, duration=duration, model=model)
     a2c_eval_end = time.time()
     a2c_eval_time = a2c_eval_end - a2c_eval_start
 
     # Testing baseline
+    model = A2C3.load("saved models/a2c_baseline")
     print("Baseline Prediction")
-    actor_critic_baseline.env.config["lanes_count"] = 3
+    actor_critic_baseline.env.config["lanes_count"] = 5
     actor_critic_baseline.env.config["vehicles_count"] = 60
+    actor_critic_baseline.env.config["vehicles_density"] = 2
 
     baseline_eval_start = time.time()
-    baseline_training_steps, baseline_max_reward, baseline_episode_rewards, baseline_episode_steps, baseline_action_distribution = prediction(episodes=num_episodes, agent=actor_critic_baseline, duration=duration)
+    baseline_prediction_steps, baseline_max_reward, baseline_episode_rewards, baseline_episode_steps, baseline_action_distribution = prediction(episodes=num_episodes, agent=actor_critic_baseline, duration=duration, model=model)
     baseline_eval_end = time.time()
     baseline_eval_time = baseline_eval_end - baseline_eval_start
 
     # Evaluation vs. Baseline A2C
-    # Training speed
-    print("Baseline prediction finished in:", baseline_time, "seconds")
-    print("A2C prediction finished in:", a2c_training_time, "seconds")
-
     # Evaluation with baseline time
-    print("Baseline prediction steps:", baseline_training_steps)
-    print("A2C prediction steps:", eval_training_steps)
+    print("Baseline prediction steps:", baseline_prediction_steps)
+    print("A2C prediction steps:", eval_prediction_steps)
     print("Baseline prediction finished in:", baseline_eval_time, "seconds")
     print("A2C prediction finished in:", a2c_eval_time, "seconds")
 

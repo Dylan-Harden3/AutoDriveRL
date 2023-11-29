@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 
+
 class Plotting():
 
     def average_episodic_plot(self, baseline_metric_values, metric_values, metric_name):
@@ -12,6 +13,7 @@ class Plotting():
         plt.ylabel(f'Average {metric_name} per Episode')
         plt.title(f'Average {metric_name} Over Time')
         plt.legend()
+        plt.savefig(f'{metric_name}_average_plot.png')
         plt.show()
     
     def episodic_plot(self, baseline_metric_values, metric_values, metric_name):
@@ -21,6 +23,7 @@ class Plotting():
         plt.ylabel(f'{metric_name} per Episode')
         plt.title(f'Episode {metric_name} Over Time')
         plt.legend()
+        plt.savefig(f'{metric_name}_episodic_plot.png')
         plt.show()
 
     def bar_graph(self, baseline_distribution, a2c_distribution):
@@ -38,4 +41,5 @@ class Plotting():
         plt.ylabel("Number of Selections")
         plt.title("Action Distribution")
         plt.legend()
+        plt.savefig("action_distribution.png")
         plt.show()
