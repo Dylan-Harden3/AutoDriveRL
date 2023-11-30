@@ -13,14 +13,15 @@ class A2C():
         self.env = env
         self.training_steps = training_steps
         self.testing_steps = testing_steps
-        self.actor_critic = self.a2c_network(self.env.observation_space.shape[0], hidden_neurons, self.env.action_space.n)
+        self.actor_critic = self.a2c_network(self.env.observation_space.shape, hidden_neurons, self.env.action_space.n)
         self.optimizer = keras.optimizers.Adam(learning_rate=lr)
         self.discount_factor = gamma
 
 
     def a2c_network(self, num_inputs, num_hidden, num_actions):
         inputs = layers.Input(num_inputs, name="input_layer")
-        common = layers.Dense(num_hidden, activation="relu", name="common_layer")(inputs)
+        flatten = layers.Flatten()(inputs)
+        common = layers.Dense(num_hidden, activation="relu", name="common_layer")(flatten)
         actor = layers.Dense(num_actions, activation="softmax", name="actor_layer")(common)
         critic = layers.Dense(1, name="critic_layer")(common)
         model = keras.Model(inputs=inputs, outputs=[actor, critic])
@@ -28,14 +29,12 @@ class A2C():
 
 
     def select_action(self, state):
-        state = tf.convert_to_tensor(state, dtype=tf.float64)
-        ego_state = state[0]
-        ego_state = tf.expand_dims(ego_state, 0)
-        ego_probs, value = self.actor_critic(ego_state)
-
+        ego_probs, value = self.actor_critic(state)
+        ego_probs = np.squeeze(ego_probs)
+        value = value.numpy().item()
         action = np.random.choice(self.env.action_space.n, p=np.squeeze(ego_probs))
 
-        return action, ego_probs[0, action], value[0, 0]
+        return action, ego_probs[action], value
 
 
     def update_actor_critic(self, advantage, prob, value, tape):
@@ -49,6 +48,7 @@ class A2C():
 
     def train_episode(self):
         state, _ = self.env.reset()
+        state = np.expand_dims(state, axis=0)
         rewards = []
         action_distribution = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
         for step in range(1, self.training_steps + 1):
@@ -57,10 +57,10 @@ class A2C():
                 action, prob, value = self.select_action(state)
                 action_distribution[int(action)] += 1
                 next_state, reward, done, _, _ = self.env.step(action)
-                print("Reward:", reward)
-                next_state_tensor = tf.convert_to_tensor(next_state)
-                _, next_value = self.actor_critic(next_state_tensor)
-                next_value = next_value[0, 0]
+
+                next_state = np.expand_dims(next_state, axis=0)
+                _, next_value = self.actor_critic(next_state)
+                next_value = next_value.numpy().item()
 
                 if done:
                     next_value = next_value * 0
