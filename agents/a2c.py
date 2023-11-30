@@ -58,7 +58,7 @@ class A2C():
                 action, prob, value = self.select_action(state)
                 action_distribution[int(action)] += 1
                 next_state, reward, done, _, _ = self.env.step(action)
-
+                print("Reward:", reward)
                 next_state_tensor = tf.convert_to_tensor(next_state)
                 _, next_value = self.actor_critic(next_state_tensor)
                 next_value = next_value[0, 0]
