@@ -57,13 +57,24 @@ class A2C():
         state, _ = self.env.reset()
         rewards = []
         action_distribution = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
+        done = False
+        cur_rewards = []
+        episode_count = 1
         for step in range(1, self.training_steps + 1):
-            print("Step:", step, "out of", self.training_steps)
+            if step % 1000 == 0:
+                print(f"STEP: {step}")
+            if done:
+                print(f"EPISODE {episode_count} RETURN: {sum(cur_rewards)}")
+                cur_rewards = []
+                episode_count += 1
+
+            # print("Step:", step, "out of", self.training_steps)
             with tf.GradientTape() as tape:
                 action, prob, value = self.select_action(state)
                 action_distribution[int(action)] += 1
                 next_state, reward, done, _, _ = self.env.step(action)
-                print("Reward:", reward)
+                # print("Reward:", reward)
+                cur_rewards.append(reward)
                 next_state_tensor = tf.convert_to_tensor(next_state)
                 _, next_value = self.actor_critic(next_state_tensor)
                 next_value = next_value[-1]
@@ -77,7 +88,6 @@ class A2C():
                 rewards.append(reward)
 
                 if done:
-                    print("crashed")
                     state, _ = self.env.reset()
                 else:
                     state = next_state

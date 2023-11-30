@@ -18,7 +18,7 @@ from stable_baselines3 import A2C as A2C3
 
 def main(argv):
     # Hyperparameters
-    training_steps = 10000
+    training_steps = 50000
     num_episodes = 10
     testing_steps = 1000
     neurons = 256
@@ -27,22 +27,22 @@ def main(argv):
     duration = 150
 
     # Environment configuration parameters
-    env = gym.make('highway-v0', render_mode='human')
+    env = gym.make('highway-v0')
     env.config["lanes_count"] = 5
     env.config["duration"] = duration
     env.config["lane_change_reward"] = 0
-    env.config["right_lane_reward"] = 0.2
-    env.config["collision_reward"] = -5
+    env.config["right_lane_reward"] = 0.1
+    env.config["collision_reward"] = -10
     env.config["high_speed_reward"] = 0.8
-    env.config["reward_speed_range"] = [30, 40]
-    env.config["vehicles_count"] = 60
+    env.config["reward_speed_range"] = [10, 40]
+    env.config["vehicles_count"] = 50
     env.config["vehicles_density"] = 2
     config = {
        "observation": {
            "type": "GrayscaleObservation",
            "observation_shape": (128, 64),
            "stack_size": 4,
-           "weights": [0.2989, 0.1070, 0.8140],  # weights for RGB conversion
+           "weights": [0.2989, 0.5870, 0.1140],  # weights for RGB conversion
        },
        "policy_frequency": 2
     }
