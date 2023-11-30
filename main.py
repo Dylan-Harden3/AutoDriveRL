@@ -3,8 +3,10 @@ import gymnasium as gym
 import time
 import getopt, sys
 import os
+import matplotlib.pyplot as plt
 
-from agents.ddqn import DDQN
+
+# from agents.ddqn import DDQN
 from agents.a2c import A2C
 from baselines.a2c_baseline import A2CBaseline
 from helpers.evaluation import *
@@ -35,12 +37,22 @@ def main(argv):
     env.config["reward_speed_range"] = [30, 40]
     env.config["vehicles_count"] = 60
     env.config["vehicles_density"] = 2
-
+    config = {
+       "observation": {
+           "type": "GrayscaleObservation",
+           "observation_shape": (128, 64),
+           "stack_size": 4,
+           "weights": [0.2989, 0.1070, 0.8140],  # weights for RGB conversion
+       },
+       "policy_frequency": 2
+    }
+    env.configure(config)
+    obs, info = env.reset()
     try:
         opts, _ = getopt.getopt(argv, "he:s:t:n:l:g:d:", ["help=", "episodes=", "steps=", "testing steps=" "neurons=", 
                                                         "learning rate=", "gamma=", "duration="])
     except getopt.GetoptError:
-        print('Usage: main.py [-h <help>] [-e <episodes>] [-s <steps>] [-t <testing steps>] [-n <neurons>] [-l <learning rate>] [-g <gamma>] [-d <duration>] [-n <neurons>]')
+        print('Usage: main.py [-h <help>] [-e <episodes>] [-s <steps>] [-t <testing steps>] [-n <neurons>] [-l <learning rate>] [-g <gamma>] [-d <duration>]')
         sys.exit(2)
 
     for opt, arg in opts:
