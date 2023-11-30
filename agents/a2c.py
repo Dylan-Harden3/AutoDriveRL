@@ -49,6 +49,8 @@ class A2C():
     def train_episode(self):
         state, _ = self.env.reset()
         state = np.expand_dims(state, axis=0)
+        episode = 0
+        episode_reward = 0
         rewards = []
         action_distribution = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
         for step in range(1, self.training_steps + 1):
@@ -68,10 +70,15 @@ class A2C():
                 advantage = (reward + (self.discount_factor * next_value)) - value
 
                 self.update_actor_critic(advantage, prob, value, tape)
-                rewards.append(reward)
+                episode_reward += reward
 
                 if done:
+                    episode += 1
                     state, _ = self.env.reset()
+                    state = np.expand_dims(state, axis=0)
+                    rewards.append(episode_reward)
+                    print(f"Episode: {episode} Reward {episode_reward}")
+                    episode_reward = 0
                 else:
                     state = next_state
 
