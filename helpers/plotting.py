@@ -4,42 +4,42 @@ import numpy as np
 
 class Plotting():
 
-    def average_episodic_plot(self, baseline_metric_values, metric_values, metric_name):
-        baseline_average_values = [sum(baseline_metric_values[:i+1]) / len(baseline_metric_values[:i+1]) for i in range(len(baseline_metric_values))]
-        average_values = [sum(metric_values[:i+1]) / len(metric_values[:i+1]) for i in range(len(metric_values))]
-        plt.plot(baseline_average_values, label="Baseline")
-        plt.plot(average_values, label="A2C")
+    def average_episodic_plot(self, metric_values1, metric_values2, metric_name, label1, label2):
+        average_values1 = [sum(metric_values1[:i+1]) / len(metric_values1[:i+1]) for i in range(len(metric_values1))]
+        average_values2 = [sum(metric_values2[:i+1]) / len(metric_values2[:i+1]) for i in range(len(metric_values2))]
+        plt.plot(average_values1, label=label1)
+        plt.plot(average_values2, label=label2)
         plt.xlabel('Episodes')
         plt.ylabel(f'Average {metric_name} per Episode')
         plt.title(f'Average {metric_name} Over Time')
         plt.legend()
-        plt.savefig(f'{metric_name}_average_plot.png')
+        plt.savefig(f'{label1}_vs_{label2}_{metric_name.lower()}_average_plot.png')
         plt.show()
     
-    def episodic_plot(self, baseline_metric_values, metric_values, metric_name):
-        plt.plot(baseline_metric_values, label="Baseline")
-        plt.plot(metric_values, label="A2C")
+    def episodic_plot(self, metric_values1, metric_values2, metric_name, label1, label2):
+        plt.plot(metric_values1, label=label1)
+        plt.plot(metric_values2, label=label2)
         plt.xlabel('Episodes')
         plt.ylabel(f'{metric_name} per Episode')
         plt.title(f'Episode {metric_name} Over Time')
         plt.legend()
-        plt.savefig(f'{metric_name}_episodic_plot.png')
+        plt.savefig(f'{label1}_vs_{label2}_{metric_name.lower()}_episodic_plot.png')
         plt.show()
 
-    def bar_graph(self, baseline_distribution, a2c_distribution):
-        actions = [0, 1, 2, 3, 4]
-        baseline_values = baseline_distribution.values()
-        a2c_values = a2c_distribution.values()
+    def bar_graph(self, metric_values1, metric_values2, label1, label2):
+        actions = ["0: Lane Left", "1: Idle", "2: Lane Right", "3: Faster", "4: Slower"]
+        values1 = metric_values1.values()
+        values2 = metric_values2.values()
 
         x_axis = np.arange(len(actions))
 
-        plt.bar(x_axis - 0.2, baseline_values, color ='maroon', width = 0.4, label="Baseline")
-        plt.bar(x_axis + 0.2, a2c_values, color ='grey', width = 0.4, label="A2C")
+        plt.bar(x_axis - 0.2, values1, color ='maroon', width = 0.4, label=label1)
+        plt.bar(x_axis + 0.2, values2, color ='grey', width = 0.4, label=label2)
 
         plt.xticks(x_axis, actions) 
         plt.xlabel("Actions")
         plt.ylabel("Number of Selections")
         plt.title("Action Distribution")
         plt.legend()
-        plt.savefig("action_distribution.png")
+        plt.savefig(f'{label1}_vs_{label2}_action_distribution.png')
         plt.show()

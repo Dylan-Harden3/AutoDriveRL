@@ -123,17 +123,16 @@ class DDQN():
         done = False
         rewards = []
         for step_number in range(1, self.training_steps+1):
+            print("Step:", step_number, "out of", self.training_steps)
             if done:
                 episode_rewards.append(sum(rewards))
                 rewards = []
                 print(f"Episode: {episode} Reward {episode_rewards[-1]}")
                 episode += 1
-            # print("Step:", step_number, "out of", self.training_steps)
             action = np.random.choice(np.arange(self.env.action_space.n), p=self.epsilon_greedy(state, step_number))
             next_state, reward, done, _, _ = self.env.step(action)
             rewards.append(reward)
             action_distribution[int(action)] += 1
-            # print("Reward:", reward)
             self.memorize(state, action, reward, next_state, done)
             self.replay()
             if done:
@@ -142,4 +141,5 @@ class DDQN():
                 state = next_state
             if step_number % self.update_target_every == 0:
                 self.update_target_model()
+        self.model.save("saved models/ddqn_model.h5")
         return action_distribution, episode_rewards

@@ -30,17 +30,14 @@ def main(argv):
 
     # Environment configuration parameters
     env = gym.make('highway-v0', render_mode='human')
-    """
-    env.config["lanes_count"] = 5
+    #env.config["lanes_count"] = 5
     env.config["duration"] = duration
-    env.config["lane_change_reward"] = 0
-    env.config["right_lane_reward"] = 0.2
+    #env.config["lane_change_reward"] = 0
+    env.config["right_lane_reward"] = 0.05
     env.config["collision_reward"] = -5
     env.config["high_speed_reward"] = 0.8
     env.config["reward_speed_range"] = [30, 40]
-    env.config["vehicles_count"] = 60
-    env.config["vehicles_density"] = 2
-    """
+    #env.config["vehicles_density"] = 2
     env.config["observation"] = {
         "type": "Kinematics",
         "vehicles_count": 15,
@@ -92,14 +89,17 @@ def main(argv):
     # Training A2C
     print("A2C Training")
     a2c_training_action_distribution, a2c_training_rewards = actor_critic_agent.train_episode()
+    env.reset()
 
     # Training DQN
     print("DDQN Training")
     ddqn_training_action_distribution, ddqn_training_rewards = dqn.train_episode()
+    env.reset()
 
     # Training A2C baseline
     print("Baseline Training")
     actor_critic_baseline.train_model()
+    env.reset()
 
     # # Testing A2C
     # model = models.load_model("saved models/a2c_network.h5")
@@ -138,9 +138,9 @@ def main(argv):
 
     # Plots
     # Plotting DDQN vs. A2C Training
-    plotter.average_episodic_plot(a2c_training_rewards, ddqn_training_rewards, "Reward")
-    plotter.episodic_plot(a2c_training_rewards, ddqn_training_rewards, "Reward")
-    plotter.bar_graph(a2c_training_action_distribution, ddqn_training_action_distribution)
+    plotter.average_episodic_plot(a2c_training_rewards, ddqn_training_rewards, "Reward", "A2C", "DQN")
+    plotter.episodic_plot(a2c_training_rewards, ddqn_training_rewards, "Reward", "A2C", "DQN")
+    plotter.bar_graph(a2c_training_action_distribution, ddqn_training_action_distribution, "A2C", "DQN")
 
     # Plotting A2C vs. Baseline Testing
     # plotter.average_episodic_plot(baseline_episode_rewards, eval_episode_rewards, "Reward")
