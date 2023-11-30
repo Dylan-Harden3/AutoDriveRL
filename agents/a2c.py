@@ -23,7 +23,6 @@ class A2C():
         common = layers.Dense(num_hidden, activation="relu", name="common_layer")(inputs)
         actor = layers.Dense(num_actions, activation="softmax", name="actor_layer")(common)
         critic = layers.Dense(1, name="critic_layer")(common)
-
         model = keras.Model(inputs=inputs, outputs=[actor, critic])
         return model
 

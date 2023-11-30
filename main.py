@@ -20,32 +20,43 @@ def main(argv):
     num_episodes = 10
     testing_steps = 1000
     neurons = 256
-    lr = 0.0001
-    gamma = 0.95
+    lr = 0.0005
+    gamma = 0.8
     duration = 150
+    epsilon = 0.9
+    replay_memory_size = 15000
+    update_target_every = 50
+    batch_size = 32
 
     # Environment configuration parameters
-    env = gym.make('highway-v0', render_mode='human')
+    env = gym.make('highway-v0')
     env.config["lanes_count"] = 5
-    env.config["duration"] = duration
-    env.config["lane_change_reward"] = 0
-    env.config["right_lane_reward"] = 0.2
-    env.config["collision_reward"] = -5
-    env.config["high_speed_reward"] = 0.8
-    env.config["reward_speed_range"] = [30, 40]
-    env.config["vehicles_count"] = 60
-    env.config["vehicles_density"] = 2
+    # env.config["duration"] = duration
+    # env.config["lane_change_reward"] = 0
+    # env.config["right_lane_reward"] = 0.2
+    # env.config["collision_reward"] = -5
+    # env.config["high_speed_reward"] = 0.8
+    # env.config["reward_speed_range"] = [30, 40]
+    # env.config["vehicles_count"] = 60
+    # env.config["vehicles_density"] = 2
+    env.config["observation"] = {
+        "type": "Kinematics",
+        "vehicles_count": 15,
+        "features": ["presence", "x", "y", "vx", "vy", "heading"]
+    }
+    obs, info = env.reset()
+    print(env.config)
 
     try:
         opts, _ = getopt.getopt(argv, "he:s:t:n:l:g:d:", ["help=", "episodes=", "steps=", "testing steps=" "neurons=", 
                                                         "learning rate=", "gamma=", "duration="])
     except getopt.GetoptError:
-        print('Usage: main.py [-h <help>] [-e <episodes>] [-s <steps>] [-t <testing steps>] [-n <neurons>] [-l <learning rate>] [-g <gamma>] [-d <duration>] [-n <neurons>]')
+        print('Usage: main.py [-h <help>] [-e <episodes>] [-s <steps>] [-t <testing steps>] [-n <neurons>] [-l <learning rate>] [-g <gamma>] [-d <duration>] [-n <neurons>] [-E <epsilon>] [-m <replay memory size>] [-N <target update interval>] [-B <batch size>]')
         sys.exit(2)
 
     for opt, arg in opts:
         if opt == '-h':
-            print('Usage: main.py [-e <episodes>] [-s <steps>] [-t <testing steps>] [-n <neurons>] [-l <lr>] [-g <gamma>] [-d <duration>] [-b <baseline steps>]')
+            print('Usage: main.py [-e <episodes>] [-s <steps>] [-t <testing steps>] [-n <neurons>] [-l <lr>] [-g <gamma>] [-d <duration>] [-b <baseline steps>] [-E <epsilon>] [-m <replay memory size>] [-N <target update interval>] [-B <batch size>]')
             sys.exit()
         elif opt in ("-e", "--episodes"):
             num_episodes = int(arg)
@@ -62,65 +73,78 @@ def main(argv):
         elif opt in ("-d", "--duration"):
             duration = float(arg)
             env.config["duration"] = duration
+        elif opt in ("-E", "--epsilon"):
+            epsilon = float(arg)
+        elif opt in ("-m", "--replay_memory_size"):
+            replay_memory_size = int(arg)
+        elif opt in ("-N", "--update_target_every"):
+            update_target_every = int(arg)
+        elif opt in ("-B", "--batch_size"):
+            batch_size = int(arg)
 
     actor_critic_agent = A2C(env=env, training_steps=training_steps, testing_steps=testing_steps, hidden_neurons=neurons, lr=lr, gamma=gamma)
     actor_critic_baseline = A2CBaseline(env=env, training_steps=training_steps, testing_steps=testing_steps, lr=lr, gamma=gamma)
     plotter = Plotting()
     
-    # Training A2C
-    print("A2C Training")
-    a2c_training_start = time.time()
-    training_action_distribution, training_rewards = actor_critic_agent.train_episode()
-    a2c_training_end = time.time()
-    a2c_training_time = a2c_training_end - a2c_training_start
+    dqn = DDQN(env, training_steps, testing_steps, neurons, lr, gamma, epsilon, replay_memory_size, batch_size, update_target_every)
 
-    # Training baseline
-    print("Baseline Training")
-    baseline_start = time.time()
-    actor_critic_baseline.train_model()
-    baseline_end = time.time()
-    baseline_time = baseline_end - baseline_start
+    training_action_distribution, training_rewards = dqn.train_episode()
+    # # Training A2C
+    # print("A2C Training")
+    # a2c_training_start = time.time()
+    # training_action_distribution, training_rewards = actor_critic_agent.train_episode()
+    # a2c_training_end = time.time()
+    # a2c_training_time = a2c_training_end - a2c_training_start
 
-    # Testing A2C
-    model = models.load_model("saved models/a2c_network.h5")
-    print("A2C Prediction")
-    actor_critic_agent.env.config["lanes_count"] = 5
-    actor_critic_agent.env.config["vehicles_count"] = 60
-    actor_critic_baseline.env.config["vehicles_density"] = 2
+    # # Training baseline
+    # print("Baseline Training")
+    # baseline_start = time.time()
+    # actor_critic_baseline.train_model()
+    # baseline_end = time.time()
+    # baseline_time = baseline_end - baseline_start
 
-    a2c_eval_start = time.time()
-    eval_prediction_steps, eval_max_reward, eval_episode_rewards, eval_episode_steps, eval_action_distribution = prediction(episodes=num_episodes, agent=actor_critic_agent, duration=duration, model=model)
-    a2c_eval_end = time.time()
-    a2c_eval_time = a2c_eval_end - a2c_eval_start
+    # # Testing A2C
+    # model = models.load_model("saved models/a2c_network.h5")
+    # print("A2C Prediction")
+    # actor_critic_agent.env.config["lanes_count"] = 5
+    # actor_critic_agent.env.config["vehicles_count"] = 60
+    # actor_critic_baseline.env.config["vehicles_density"] = 2
 
-    # Testing baseline
-    model = A2C3.load("saved models/a2c_baseline")
-    print("Baseline Prediction")
-    actor_critic_baseline.env.config["lanes_count"] = 5
-    actor_critic_baseline.env.config["vehicles_count"] = 60
-    actor_critic_baseline.env.config["vehicles_density"] = 2
+    # a2c_eval_start = time.time()
+    # eval_prediction_steps, eval_max_reward, eval_episode_rewards, eval_episode_steps, eval_action_distribution = prediction(episodes=num_episodes, agent=actor_critic_agent, duration=duration, model=model)
+    # a2c_eval_end = time.time()
+    # a2c_eval_time = a2c_eval_end - a2c_eval_start
 
-    baseline_eval_start = time.time()
-    baseline_prediction_steps, baseline_max_reward, baseline_episode_rewards, baseline_episode_steps, baseline_action_distribution = prediction(episodes=num_episodes, agent=actor_critic_baseline, duration=duration, model=model)
-    baseline_eval_end = time.time()
-    baseline_eval_time = baseline_eval_end - baseline_eval_start
+    # # Testing baseline
+    # model = A2C3.load("saved models/a2c_baseline")
+    # print("Baseline Prediction")
+    # actor_critic_baseline.env.config["lanes_count"] = 5
+    # actor_critic_baseline.env.config["vehicles_count"] = 60
+    # actor_critic_baseline.env.config["vehicles_density"] = 2
 
-    # Evaluation vs. Baseline A2C
-    # Evaluation with baseline time
-    print("Baseline prediction steps:", baseline_prediction_steps)
-    print("A2C prediction steps:", eval_prediction_steps)
-    print("Baseline prediction finished in:", baseline_eval_time, "seconds")
-    print("A2C prediction finished in:", a2c_eval_time, "seconds")
+    # baseline_eval_start = time.time()
+    # baseline_prediction_steps, baseline_max_reward, baseline_episode_rewards, baseline_episode_steps, baseline_action_distribution = prediction(episodes=num_episodes, agent=actor_critic_baseline, duration=duration, model=model)
+    # baseline_eval_end = time.time()
+    # baseline_eval_time = baseline_eval_end - baseline_eval_start
 
-    # Max reward
-    print("Max baseline reward achieved:", baseline_max_reward)
-    print("Max A2C reward achieved:", eval_max_reward)
+    # # Evaluation vs. Baseline A2C
+    # # Evaluation with baseline time
+    # print("Baseline prediction steps:", baseline_prediction_steps)
+    # print("A2C prediction steps:", eval_prediction_steps)
+    # print("Baseline prediction finished in:", baseline_eval_time, "seconds")
+    # print("A2C prediction finished in:", a2c_eval_time, "seconds")
 
-    # Plots
-    plotter.average_episodic_plot(baseline_episode_rewards, eval_episode_rewards, "Reward")
-    plotter.episodic_plot(baseline_episode_rewards, eval_episode_rewards, "Reward")
-    plotter.episodic_plot(baseline_episode_steps, eval_episode_steps, "Steps")
-    plotter.bar_graph(baseline_action_distribution, eval_action_distribution)
+    # # Max reward
+    # print("Max baseline reward achieved:", baseline_max_reward)
+    # print("Max A2C reward achieved:", eval_max_reward)
+
+    # # Plots
+    # plotter.average_episodic_plot(baseline_episode_rewards, eval_episode_rewards, "Reward")
+    # plotter.episodic_plot(baseline_episode_rewards, eval_episode_rewards, "Reward")
+    # plotter.episodic_plot(baseline_episode_steps, eval_episode_steps, "Steps")
+    # plotter.bar_graph(baseline_action_distribution, eval_action_distribution)
+    plotter.average_episodic_plot(training_rewards, training_rewards, "Reward")
+
 
 
 
