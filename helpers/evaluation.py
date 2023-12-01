@@ -14,7 +14,6 @@ def prediction(episodes, agent, duration, model):
     episode_steps = []
     action_distribution = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
     for episode in range(1, episodes + 1):
-        episode_start = time.time()
         print("Episode: ", episode)
         reward, steps, predicted_action_distribution = agent.model_predict(model)
         for key, _ in action_distribution.items():
@@ -24,8 +23,4 @@ def prediction(episodes, agent, duration, model):
         episode_steps.append(steps)
         max_reward = max(max_reward, reward)
         print("Reward:", reward, "| Steps:", steps)
-        episode_end = time.time()
-        if (episode_end - episode_start > duration):
-            print("Time limit reached")
-            break
     return training_steps, max_reward, episode_rewards, episode_steps, action_distribution

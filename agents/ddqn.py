@@ -120,12 +120,14 @@ class DDQN():
 
         episode_rewards = []
         episode = 1
+        max_episode_reward = 0
         done = False
         rewards = []
         for step_number in range(1, self.training_steps+1):
             print("Step:", step_number, "out of", self.training_steps)
             if done:
                 episode_rewards.append(sum(rewards))
+                max_episode_reward = max(max_episode_reward, sum(rewards))
                 rewards = []
                 print(f"Episode: {episode} Reward {episode_rewards[-1]}")
                 episode += 1
@@ -142,4 +144,4 @@ class DDQN():
             if step_number % self.update_target_every == 0:
                 self.update_target_model()
         self.model.save("saved models/ddqn_model.h5")
-        return action_distribution, episode_rewards
+        return action_distribution, episode_rewards, max_episode_reward

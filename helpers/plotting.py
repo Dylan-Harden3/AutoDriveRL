@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 import numpy as np
+import csv
 
 
 class Plotting():
@@ -43,3 +44,18 @@ class Plotting():
         plt.legend()
         plt.savefig(f'{label1}_vs_{label2}_action_distribution.png')
         plt.show()
+
+    def write_rewards_to_csv(self, rewards, label):
+        episodes = np.arange(1, len(rewards) + 1)
+        with open(f'{label}_episode_rewards.csv', 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['Episode', 'Reward'])
+            for episode, reward in zip(episodes, rewards):
+                writer.writerow([episode, reward])
+
+    def write_actions_to_csv(self, action_distribution, label):
+        with open(f'{label}_action_distribution.csv', 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['Action', 'Selections'])
+            for episode, reward in action_distribution.items():
+                writer.writerow([episode, reward])
