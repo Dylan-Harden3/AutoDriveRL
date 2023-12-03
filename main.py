@@ -4,6 +4,8 @@ import time
 import getopt, sys
 import os
 import csv
+import itertools
+import pickle
 
 from agents.ddqn import DDQN
 from agents.a2c import A2C
@@ -17,12 +19,15 @@ from stable_baselines3 import A2C as A2C3
 
 def main(argv):
     # Hyperparameters
-    training_steps = 10000
-    testing_episodes = 10
+    solver = None
+    mode = None
+
+    training_steps = 20000
+    testing_episodes = 100
     testing_steps = 1000
-    neurons = 256
-    lr = 0.001
-    gamma = 0.8
+    neurons = 2048
+    lr = 0.0001
+    gamma = 0.99
     duration = 90
     epsilon = 0.9
     replay_memory_size = 15000
@@ -31,14 +36,11 @@ def main(argv):
 
     # Environment configuration parameters
     env = gym.make('highway-v0', render_mode='human')
-    #env.config["lanes_count"] = 5
     env.config["duration"] = duration
-    #env.config["lane_change_reward"] = 0
     env.config["right_lane_reward"] = 0.05
     env.config["collision_reward"] = -5
     env.config["high_speed_reward"] = 0.8
     env.config["reward_speed_range"] = [30, 40]
-    #env.config["vehicles_density"] = 2
     env.config["observation"] = {
         "type": "Kinematics",
         "vehicles_count": 15,
@@ -47,16 +49,17 @@ def main(argv):
     env.reset()
     
     try:
-        opts, _ = getopt.getopt(argv, "he:s:t:n:l:g:d:E:m:N:B", ["help=", "episodes=", "steps=", "testing steps=" "neurons=", 
+        opts, _ = getopt.getopt(argv, "he:s:t:n:l:g:d:E:m:N:B:S:M:", ["help=", "episodes=", "steps=", "testing steps=" "neurons=", 
                                                                 "learning rate=", "gamma=", "duration=", "epsilon=", 
-                                                                "replay memory size=", "update target every=", "batch size="])
+                                                                "replay memory size=", "update target every=", 
+                                                                "batch size=", "solver=", "mode="])
     except getopt.GetoptError:
-        print('Usage: main.py [-h <help>] [-e <episodes>] [-s <steps>] [-t <testing steps>] [-n <neurons>] [-l <learning rate>] [-g <gamma>] [-d <duration>] [-E <epsilon>] [-m <replay memory size>] [-N <target update interval>] [-B <batch size>]')
+        print('Usage: main.py [-h <help>] [-e <episodes>] [-s <steps>] [-t <testing steps>] [-n <neurons>] [-l <learning rate>] [-g <gamma>] [-d <duration>] [-E <epsilon>] [-m <replay memory size>] [-N <target update interval>] [-B <batch size>] [-S <solver>] [-M <mode>]')
         sys.exit(2)
 
     for opt, arg in opts:
         if opt == '-h':
-            print('Usage: main.py [-e <episodes>] [-s <steps>] [-t <testing steps>] [-n <neurons>] [-l <lr>] [-g <gamma>] [-d <duration>] [-E <epsilon>] [-m <replay memory size>] [-N <target update interval>] [-B <batch size>]')
+            print('Usage: main.py [-e <episodes>] [-s <steps>] [-t <testing steps>] [-n <neurons>] [-l <lr>] [-g <gamma>] [-d <duration>] [-E <epsilon>] [-m <replay memory size>] [-N <target update interval>] [-B <batch size>] [-S <solver>] [-M <mode>]')
             sys.exit()
         elif opt in ("-e", "--episodes"):
             testing_episodes = int(arg)
@@ -81,83 +84,69 @@ def main(argv):
             update_target_every = int(arg)
         elif opt in ("-B", "--batch_size"):
             batch_size = int(arg)
+        elif opt in ("-S", "--solver"):
+            solver = arg
+        elif opt in ("-M", "--mode"):
+            mode = arg
 
-    actor_critic = A2C(env=env, training_steps=training_steps, testing_steps=testing_steps, hidden_neurons=neurons, lr=lr, gamma=gamma)
-    actor_critic_baseline = A2CBaseline(env=env, training_steps=training_steps, testing_steps=testing_steps, lr=lr, gamma=gamma)
-    dqn = DDQN(env, training_steps, testing_steps, neurons, lr, gamma, epsilon, replay_memory_size, batch_size, update_target_every)
-    plotter = Plotting()
+    if solver == None or mode == None:
+        print("Error: missing required args")
+        sys.exit(2)
 
-    # Training A2C
-    print("A2C Training")
-    a2c_training_action_distribution, a2c_training_rewards, a2c_training_max_reward = actor_critic.train_episode()
-    env.reset()
+    if mode == 'train':
+        # Training A2C
+        if solver == 'a2c':
+            actor_critic = A2C(env=env, training_steps=training_steps, testing_steps=testing_steps, hidden_neurons=neurons, lr=lr, gamma=gamma)
+            actor_critic_baseline = A2CBaseline(env=env, training_steps=training_steps, testing_steps=testing_steps, lr=lr, gamma=gamma)
+            plotter = Plotting()
 
-    # # Training DQN
-    print("DDQN Training")
-    ddqn_training_action_distribution, ddqn_training_rewards, ddqn_training_max_reward = dqn.train_episode()
-    env.reset()
+            print("A2C Training")
+            a2c_training_action_distribution, a2c_training_rewards, a2c_training_max_reward = actor_critic.train_episode()
+            env.reset()
 
-    # Training A2C baseline
-    print("Baseline Training")
-    actor_critic_baseline.train_model()
-    env.reset()
+            # Training A2C baseline
+            print("Baseline Training")
+            actor_critic_baseline.train_model()
+            env.reset()
 
-    # # Testing A2C
-    # a2c_model = models.load_model("saved models/a2c_model.h5")
-    # print("A2C Prediction")
+            # Training max reward
+            print("Max A2C training reward achieved:", a2c_training_max_reward)
 
-    # a2c_eval_start = time.time()
-    # a2c_eval_max_reward, a2c_eval_episode_rewards, a2c_eval_episode_steps, a2c_eval_action_distribution = prediction(episodes=testing_episodes, agent=actor_critic, duration=duration, model=a2c_model)
-    # a2c_eval_end = time.time()
-    # a2c_eval_time = a2c_eval_end - a2c_eval_start
+            pickle.dump(a2c_training_action_distribution, open("a2c_action_dist",'wb'))
+            pickle.dump(a2c_training_rewards, open("a2c_training_rewards",'wb'))
 
-    # # Testing DDQN
-    # ddqn_model = models.load_model("saved models/ddqn_model.h5")
-    # print("DDQN Prediction")
+        elif solver == 'ddqn':
+            ddqn = DDQN(env, training_steps, testing_steps, neurons, lr, gamma, epsilon, replay_memory_size, batch_size, update_target_every)
+            print("DDQN Training")
+            ddqn_training_action_distribution, ddqn_training_rewards, ddqn_training_max_reward = ddqn.train_episode()
+            env.reset()
 
-    # ddqn_eval_start = time.time()
-    # ddqn_eval_max_reward, ddqn_eval_episode_rewards, ddqn_eval_episode_steps, ddqn_eval_action_distribution = prediction(episodes=testing_episodes, agent=dqn, duration=duration, model=ddqn_model)
-    # ddqn_eval_end = time.time()
-    # ddqn_eval_time = ddqn_eval_end - ddqn_eval_start
+            # Training max reward
+            print("Max DDQN training reward achieved:", ddqn_training_max_reward)
 
-    # # Testing baseline A2C
-    # a2c_baseline_model = A2C3.load("saved models/a2c_baseline")
-    # print("A2C Baseline Prediction")
+            pickle.dump(ddqn_training_action_distribution, open("ddqn_action_dist",'wb'))
+            pickle.dump(ddqn_training_rewards, open("ddqn_training_rewards",'wb'))
+        
+        # Plotting DDQN vs. A2C Training
+        # plotter.average_episodic_plot(a2c_training_rewards, ddqn_training_rewards, "Reward", "A2C", "DQN")
+        # plotter.episodic_plot(a2c_training_rewards, ddqn_training_rewards, "Reward", "A2C", "DQN")
+        # plotter.bar_graph(a2c_training_action_distribution, ddqn_training_action_distribution, "A2C", "DQN")
 
-    # a2c_baseline_eval_start = time.time()
-    # a2c_baseline_prediction_steps, a2c_baseline_max_reward, a2c_baseline_episode_rewards, a2c_baseline_episode_steps, a2c_baseline_action_distribution = prediction(episodes=testing_episodes, agent=actor_critic_baseline, duration=duration, model=a2c_baseline_model)
-    # a2c_baseline_eval_end = time.time()
-    # a2c_baseline_eval_time = a2c_baseline_eval_end - a2c_baseline_eval_start
+    elif mode == 'test':
+        # Testing A2C
+        print("A2C Prediction")
+        a2c_model = models.load_model("saved models/a2c_model.h5")
+        a2c_average_reward = prediction(episodes=testing_episodes, agent=actor_critic, duration=duration, model=a2c_model)
+
+        # Testing baseline A2C
+        print("A2C Baseline Prediction")
+        a2c_baseline_model = A2C3.load("saved models/a2c_baseline")
+        a2c_baseline_average_reward = prediction(episodes=testing_episodes, agent=actor_critic_baseline, duration=duration, model=a2c_baseline_model)
     
-    # Evaluation
-    # Training max reward
-    print("Max A2C training reward achieved:", a2c_training_max_reward)
-    print("Max DDQN training reward achieved:", ddqn_training_max_reward)
+        # Evaluation average reward
+        print("Average A2C reward achieved:", a2c_average_reward)
+        print("Average A2C baseline reward achieved:", a2c_baseline_average_reward)
 
-    # Prediction time
-    # print("A2C prediction finished in:", a2c_eval_time, "seconds")
-    # print("DDQN prediction finished in:", ddqn_eval_time, "seconds")
-    # print("A2C Baseline prediction finished in:", a2c_baseline_eval_time, "seconds")
-
-    # # Evaluation Max reward
-    # print("Max A2C reward achieved:", a2c_eval_max_reward)
-    # print("Max DDQN reward achieved:", ddqn_eval_max_reward)
-    # print("Max A2C baseline reward achieved:", a2c_baseline_max_reward)
-    
-    # Plots
-    # Plotting DDQN vs. A2C Training
-    plotter.average_episodic_plot(a2c_training_rewards, ddqn_training_rewards, "Reward", "A2C", "DQN")
-    plotter.episodic_plot(a2c_training_rewards, ddqn_training_rewards, "Reward", "A2C", "DQN")
-    plotter.bar_graph(a2c_training_action_distribution, ddqn_training_action_distribution, "A2C", "DQN")
-    plotter.write_rewards_to_csv(a2c_training_rewards, "A2C")
-    plotter.write_rewards_to_csv(ddqn_training_rewards, "DDQN")
-    plotter.write_actions_to_csv(a2c_training_action_distribution, "A2C")
-    plotter.write_actions_to_csv(ddqn_training_action_distribution, "DDQN")
-
-    # Plotting A2C vs. Baseline Testing
-    # plotter.episodic_plot(a2c_baseline_episode_rewards, a2c_eval_episode_rewards, "Reward", "Baseline", "A2C")
-    # plotter.episodic_plot(a2c_baseline_episode_steps, a2c_eval_episode_steps, "Steps", "Baseline", "A2C")
-    # plotter.bar_graph(a2c_baseline_action_distribution, a2c_eval_action_distribution, "Baseline", "A2C")
 
 
 

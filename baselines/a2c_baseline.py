@@ -18,12 +18,10 @@ class A2CBaseline():
     def model_predict(self, model):
         total_reward = 0
         total_steps = 0
-        action_distribution = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
         state, _ = self.env.reset()
         for step in range(1, self.testing_steps + 1):
             total_steps = step
             action, _ = model.predict(state)
-            action_distribution[int(action)] += 1
             next_state, reward, done, _, _ = self.env.step(action)
 
             total_reward += reward
@@ -33,4 +31,4 @@ class A2CBaseline():
 
             state = next_state
 
-        return total_reward, total_steps, action_distribution
+        return total_reward, total_steps

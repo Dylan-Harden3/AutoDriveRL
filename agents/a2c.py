@@ -21,12 +21,20 @@ class A2C():
     def a2c_network(self, num_inputs, num_hidden, num_actions):
         inputs = layers.Input(num_inputs, name="input_layer")
         flatten = layers.Flatten()(inputs)
-        common = layers.Dense(num_hidden, activation="relu", name="common_layer1")(flatten)
-        common = layers.Dense(num_hidden / 2, activation="relu", name="common_layer2")(common)
-        actor = layers.BatchNormalization()(common)
-        actor = layers.Dense(num_actions, activation="softmax", name="actor_layer")(actor)
-        critic = layers.BatchNormalization()(common)
-        critic = layers.Dense(1, name="critic_layer")(critic)
+
+        hidden = layers.Dense(num_hidden, activation="tanh", name="common_layer1")(flatten)
+        hidden = layers.Dense(num_hidden, name="common_layer2")(hidden)
+        hidden = layers.BatchNormalization()(hidden)
+        hidden = layers.Activation("tanh")(hidden)
+        
+        hidden = layers.Dense(num_hidden, activation="tanh", name="common_layer3")(hidden)
+        hidden = layers.Dense(num_hidden, name="common_layer4")(hidden)
+        hidden = layers.BatchNormalization()(hidden)
+        hidden = layers.Activation("tanh")(hidden)
+        
+        actor = layers.Dense(num_actions, activation="softmax", name="actor_layer")(hidden)
+        critic = layers.Dense(1, name="critic_layer")(hidden)
+
         model = keras.Model(inputs=inputs, outputs=[actor, critic])
         return model
 
@@ -93,14 +101,12 @@ class A2C():
     def model_predict(self, model):
         total_reward = 0
         total_steps = 0
-        action_distribution = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
         state, _ = self.env.reset()
         state = np.expand_dims(state, axis=0)
         for step in range(1, self.testing_steps + 1):
             total_steps = step
             probs, _ = model.predict(state)
             action = np.argmax(probs[0])
-            action_distribution[int(action)] += 1
             next_state, reward, done, _, _ = self.env.step(action)
             next_state = np.expand_dims(next_state, axis=0)
 
@@ -111,7 +117,7 @@ class A2C():
 
             state = next_state
 
-        return total_reward, total_steps, action_distribution
+        return total_reward, total_steps
 
     def actor_loss(self, advantage, prob):
         loss = -tf.math.log(prob) * advantage
