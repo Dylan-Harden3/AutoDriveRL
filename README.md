@@ -58,3 +58,14 @@ To list out all the arguments you can use the `-h` flag.
 | `-L`     | Number of Dense Layers for DQN Q network                                                       | 5             |
 | `-S`     | Which solver to run for training, one of dqn or a2c                                            | None          |
 | `-M`     | Mode, either train or test                                                                     | None          |
+
+## Citation
+The source code for the environment requests that we include this citation.
+@misc{highway-env,
+  author = {Leurent, Edouard},
+  title = {An Environment for Autonomous Driving Decision-Making},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/eleurent/highway-env}},
+}
