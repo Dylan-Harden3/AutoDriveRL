@@ -14,7 +14,7 @@ from baselines.dqn_baseline import DQNBaseline
 from helpers.evaluation import *
 from helpers.plotting import Plotting
 from tensorflow.keras import models
-from stable_baselines3 import A2C as A2C3
+from stable_baselines3 import A2C as A2C_Baseline
 from stable_baselines3 import DQN as DQN_Baseline
 
 
@@ -126,8 +126,8 @@ def main(argv):
             pickle.dump(a2c_training_action_distribution, open("pickle files/a2c_action_dist20k",'wb'))
             pickle.dump(a2c_training_rewards, open("pickle files/a2c_training_rewards20k",'wb'))
 
-        elif solver == 'dqn':
-            print("DQN Training")
+        elif solver == 'ddqn':
+            print("DDQN Training")
             
             for alpha in [1.0, 0.5, 0.0]:
                 ddqn = DQN(env, training_steps, testing_steps, neurons, lr, gamma, epsilon, replay_memory_size, batch_size, update_target_every, per_alpha, num_layers)
@@ -145,19 +145,19 @@ def main(argv):
         if solver == 'a2c':
             # Testing A2C
             print("A2C Prediction")
-            a2c_model = models.load_model("saved models/a2c_model.h5")
+            a2c_model = models.load_model("saved models/a2c_model5k.h5")
             a2c_average_reward = prediction(episodes=testing_episodes, agent=actor_critic, model=a2c_model)
 
-            # Testing baseline A2C
+            # # Testing baseline A2C
             print("A2C Baseline Prediction")
-            a2c_baseline_model = A2C3.load("saved models/a2c_baseline")
+            a2c_baseline_model = A2C_Baseline.load("saved models/a2c_baseline5k")
             a2c_baseline_average_reward = prediction(episodes=testing_episodes, agent=actor_critic_baseline, model=a2c_baseline_model)
         
             # Evaluation average reward
             print("Average A2C reward achieved:", a2c_average_reward)
             print("Average A2C baseline reward achieved:", a2c_baseline_average_reward)
 
-            pickle.dump(dqn_average_rewards, open("pickle files/A2C_Testing_Rewards", "wb"))
+            pickle.dump(a2c_average_reward, open("pickle files/A2C_Testing_Rewards", "wb"))
             pickle.dump(dqn_baseline_average_reward, open("pickle files/A2C_Baseline_Testing_Rewards", "wb"))
 
         elif solver == 'ddqn':
@@ -165,8 +165,8 @@ def main(argv):
             # Testing DQN
             print("DQN Prediction")
             for alpha in [1.0, 0.5, 0.0]:
+                ddqn = DQN(env, training_steps, testing_steps, neurons, lr, gamma, epsilon, replay_memory_size, batch_size, update_target_every, per_alpha, num_layers)
                 dqn_model = models.load_model(f"saved models/dqn_model_{alpha}.h5")
-                print(dqn_model.summary())
                 dqn_average_rewards.append(prediction(episodes=testing_episodes, agent=ddqn, model=dqn_model))
 
             # Testing baseline DQN

@@ -44,7 +44,7 @@ class Plotting():
         plt.ylabel(f'Average {metric_name} per Episode')
         plt.title(f'Average {metric_name} Over Time')
         plt.legend()
-        #plt.savefig(f'{label1}_vs_{label2}_{metric_name.lower()}_average_plot.png')
+        plt.savefig(f'{label1}_vs_{label2}_{metric_name.lower()}_average_plot.png')
         plt.show()
     
     def episodic_plot(self, metric_values1, metric_values2, metric_name, label1, label2):
@@ -54,7 +54,7 @@ class Plotting():
         plt.ylabel(f'{metric_name} per Episode')
         plt.title(f'Episode {metric_name} Over Time')
         plt.legend()
-        #plt.savefig(f'{label1}_vs_{label2}_{metric_name.lower()}_episodic_plot.png')
+        plt.savefig(f'{label1}_vs_{label2}_{metric_name.lower()}_episodic_plot.png')
         plt.show()
 
     def bar_graph(self, metric_values1, metric_values2, label1, label2):
@@ -72,7 +72,7 @@ class Plotting():
         plt.ylabel("Number of Selections")
         plt.title("Action Distribution")
         plt.legend()
-        #plt.savefig(f'{label1}_vs_{label2}_action_distribution.png')
+        plt.savefig(f'{label1}_vs_{label2}_action_distribution.png')
         plt.show()
 
     def write_rewards_to_csv(self, rewards, label):
