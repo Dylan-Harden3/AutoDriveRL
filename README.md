@@ -17,11 +17,11 @@ A full list of arguments can be found at the bottom, to produce our results we r
 For Training:
 For DQN we used these hyperparameters with alpha set to 0.0, 0.5 and 1.0.
 ```bash
-python3 main.py -s 5000 -n 1024 -l 0.0001 -g 0.99 -d 90 -E 0.9 -m 1000 -N 100 -B 32 -a <alpha> -L 5 -S dqn -M train
+python3 main.py -s 5000 -n 1024 -l 0.0001 -g 0.99 -d 90 -E 0.9 -m 1000 -N 100 -B 32 -a <alpha> -L 5 -S ddqn -M train
 ```
 And for Testing:
 ```bash
-python3 main.py -S dqn -M test -e 100 -t 1000
+python3 main.py -S ddqn -M test -e 100 -t 1000
 ```
 
 #### A2C
@@ -60,8 +60,8 @@ To list out all the arguments you can use the `-h` flag.
 | `-B`     | Batch Size for sampling for DQN Replay Memory                                                  | 32            |
 | `-a`     | Alpha for Prioritized Experience Replay                                                        | 0.0           |
 | `-L`     | Number of Dense Layers for DQN Q network                                                       | 5             |
-| `-S`     | Which solver to run for training, one of dqn or a2c                                            | None          |
-| `-M`     | Mode, either train or test                                                                     | None          |
+| `-S`     | Which solver to run for training, one of ddqn or a2c                                           | None          |
+| `-M`     | Mode, either train, test, or plot_both                                                         | None          |
 
 ## Citation
 The source code for the environment requests that we include this citation.
