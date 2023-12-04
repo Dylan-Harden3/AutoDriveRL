@@ -61,6 +61,7 @@ To list out all the arguments you can use the `-h` flag.
 
 ## Citation
 The source code for the environment requests that we include this citation.
+```bash
 @misc{highway-env,
   author = {Leurent, Edouard},
   title = {An Environment for Autonomous Driving Decision-Making},
@@ -69,3 +70,4 @@ The source code for the environment requests that we include this citation.
   journal = {GitHub repository},
   howpublished = {\url{https://github.com/eleurent/highway-env}},
 }
+```
