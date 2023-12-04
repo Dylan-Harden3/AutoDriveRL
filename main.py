@@ -123,8 +123,8 @@ def main(argv):
             # Training max reward
             print("Max A2C training reward achieved:", a2c_training_max_reward)
 
-            pickle.dump(a2c_training_action_distribution, open("a2c_action_dist20k",'wb'))
-            pickle.dump(a2c_training_rewards, open("a2c_training_rewards20k",'wb'))
+            pickle.dump(a2c_training_action_distribution, open("pickle files/a2c_action_dist20k",'wb'))
+            pickle.dump(a2c_training_rewards, open("pickle files/a2c_training_rewards20k",'wb'))
 
         elif solver == 'dqn':
             print("DQN Training")
@@ -157,8 +157,8 @@ def main(argv):
             print("Average A2C reward achieved:", a2c_average_reward)
             print("Average A2C baseline reward achieved:", a2c_baseline_average_reward)
 
-            pickle.dump(dqn_average_rewards, open("A2C_Testing_Rewards", "wb"))
-            pickle.dump(dqn_baseline_average_reward, open("A2C_Baseline_Testing_Rewards", "wb"))
+            pickle.dump(dqn_average_rewards, open("pickle files/A2C_Testing_Rewards", "wb"))
+            pickle.dump(dqn_baseline_average_reward, open("pickle files/A2C_Baseline_Testing_Rewards", "wb"))
 
         elif solver == 'ddqn':
             dqn_average_rewards = []
@@ -178,24 +178,24 @@ def main(argv):
             print("Average DQN rewards achieved:", dqn_average_rewards)
             print("Average DQN baseline reward achieved:", dqn_baseline_average_reward)
 
-            pickle.dump(dqn_average_rewards, open("DQN_Testing_Rewards", "wb"))
-            pickle.dump(dqn_baseline_average_reward, open("DQN_Baseline_Testing_Rewards", "wb"))
+            pickle.dump(dqn_average_rewards, open("pickle files/DQN_Testing_Rewards", "wb"))
+            pickle.dump(dqn_baseline_average_reward, open("pickle files/DQN_Baseline_Testing_Rewards", "wb"))
 
     elif mode == 'plot_both':
         # Print DQN testing rewards
-        average_dqn_test = pickle.load(open("DQN_Testing_Rewards",'rb'))
-        baseline_dqn_test = pickle.load(open("DQN_Baseline_Testing_Rewards",'rb'))
+        average_dqn_test = pickle.load(open("pickle files/DQN_Testing_Rewards",'rb'))
+        baseline_dqn_test = pickle.load(open("pickle files/DQN_Baseline_Testing_Rewards",'rb'))
 
         print("Average DQN Test", average_dqn_test)
         print("Baseline DQN Test", baseline_dqn_test)
 
         # Plotting DQN vs. A2C Training
-        ddqn_training_rewards00 = pickle.load(open("dqn_rewards_0.0",'rb'))
-        ddqn_training_rewards05 = pickle.load(open("dqn_rewards_0.5",'rb'))
-        ddqn_training_rewards10 = pickle.load(open("dqn_rewards_1.0",'rb'))
+        ddqn_training_rewards00 = pickle.load(open("pickle files/dqn_rewards_0.0",'rb'))
+        ddqn_training_rewards05 = pickle.load(open("pickle files/dqn_rewards_0.5",'rb'))
+        ddqn_training_rewards10 = pickle.load(open("pickle files/dqn_rewards_1.0",'rb'))
 
-        a2c_training_rewards20k = pickle.load(open("a2c_training_rewards20k",'rb'))
-        a2c_training_rewards5k = pickle.load(open("a2c_training_rewards5k",'rb'))
+        a2c_training_rewards20k = pickle.load(open("pickle files/a2c_training_rewards20k",'rb'))
+        a2c_training_rewards5k = pickle.load(open("pickle files/a2c_training_rewards5k",'rb'))
 
         for ddqn_training_reward, alpha in zip([ddqn_training_rewards00, ddqn_training_rewards05, ddqn_training_rewards10], [0.0, 0.5, 1.0]):
             plotter.average_episodic_plot(a2c_training_rewards5k, ddqn_training_reward, "Reward", "A2C (5k 1024n)", f"DQN ({alpha})")
