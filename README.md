@@ -23,7 +23,6 @@ And for Testing:
 ```bash
 python3 main.py -S dqn -M test -e 100 -t 1000
 ```
-***Note that for -M test we expect there to already be trained models for all 3 alpha values (0.0, 0.5, 1.0). Our trained models are already saved.***
 
 #### A2C
 For Training:
@@ -35,6 +34,9 @@ And for Testing:
 ```bash
 python3 main.py -S a2c -M test -e 100 -t 1000
 ```
+
+
+***Note that for -M test we expect there to already be trained models for all 3 alpha values (0.0, 0.5, 1.0). Our trained models are already saved.***
 
 ## Command-line Arguments
 You must specify the `-S` and `-M` flags to specify training and which solver or testing.
