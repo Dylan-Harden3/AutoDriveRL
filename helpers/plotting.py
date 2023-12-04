@@ -4,6 +4,36 @@ import csv
 
 
 class Plotting():
+    def average_episodic_plot_all(self, metric_values1, metric_values2, metric_values3, metric_values4, metric_values5, metric_name, label1, label2, label3, label4, label5):
+        average_values1 = [sum(metric_values1[:i+1]) / len(metric_values1[:i+1]) for i in range(len(metric_values1))]
+        average_values2 = [sum(metric_values2[:i+1]) / len(metric_values2[:i+1]) for i in range(len(metric_values2))]
+        average_values3 = [sum(metric_values3[:i+1]) / len(metric_values3[:i+1]) for i in range(len(metric_values3))]
+        average_values4 = [sum(metric_values4[:i+1]) / len(metric_values4[:i+1]) for i in range(len(metric_values4))]
+        average_values5 = [sum(metric_values5[:i+1]) / len(metric_values5[:i+1]) for i in range(len(metric_values5))]
+        plt.plot(average_values1, label=label1)
+        plt.plot(average_values2, label=label2)
+        plt.plot(average_values3, label=label3)
+        plt.plot(average_values4, label=label4)
+        plt.plot(average_values5, label=label5)
+        plt.xlabel('Episodes')
+        plt.ylabel(f'Average {metric_name} per Episode')
+        plt.title(f'Average {metric_name} Over Time')
+        plt.legend()
+        plt.savefig(f'all_models_average_plot.png')
+        plt.show()
+
+    def episodic_plot_all(self, metric_values1, metric_values2, metric_values3, metric_values4, metric_values5, metric_name, label1, label2, label3, label4, label5):
+        plt.plot(metric_values1, label=label1)
+        plt.plot(metric_values2, label=label2)
+        plt.plot(metric_values3, label=label3)
+        plt.plot(metric_values4, label=label4)
+        plt.plot(metric_values5, label=label5)
+        plt.xlabel('Episodes')
+        plt.ylabel(f'{metric_name} per Episode')
+        plt.title(f'Episode {metric_name} Over Time')
+        plt.legend()
+        plt.savefig(f'all_models_episodic_plot.png')
+        plt.show()
 
     def average_episodic_plot(self, metric_values1, metric_values2, metric_name, label1, label2):
         average_values1 = [sum(metric_values1[:i+1]) / len(metric_values1[:i+1]) for i in range(len(metric_values1))]
@@ -14,7 +44,7 @@ class Plotting():
         plt.ylabel(f'Average {metric_name} per Episode')
         plt.title(f'Average {metric_name} Over Time')
         plt.legend()
-        plt.savefig(f'{label1}_vs_{label2}_{metric_name.lower()}_average_plot.png')
+        #plt.savefig(f'{label1}_vs_{label2}_{metric_name.lower()}_average_plot.png')
         plt.show()
     
     def episodic_plot(self, metric_values1, metric_values2, metric_name, label1, label2):
@@ -24,7 +54,7 @@ class Plotting():
         plt.ylabel(f'{metric_name} per Episode')
         plt.title(f'Episode {metric_name} Over Time')
         plt.legend()
-        plt.savefig(f'{label1}_vs_{label2}_{metric_name.lower()}_episodic_plot.png')
+        #plt.savefig(f'{label1}_vs_{label2}_{metric_name.lower()}_episodic_plot.png')
         plt.show()
 
     def bar_graph(self, metric_values1, metric_values2, label1, label2):
@@ -42,7 +72,7 @@ class Plotting():
         plt.ylabel("Number of Selections")
         plt.title("Action Distribution")
         plt.legend()
-        plt.savefig(f'{label1}_vs_{label2}_action_distribution.png')
+        #plt.savefig(f'{label1}_vs_{label2}_action_distribution.png')
         plt.show()
 
     def write_rewards_to_csv(self, rewards, label):

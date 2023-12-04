@@ -189,7 +189,7 @@ def main(argv):
         print("Average DQN Test", average_dqn_test)
         print("Baseline DQN Test", baseline_dqn_test)
 
-        # Plotting DQN vs. A2C Training
+        # Load pickle data
         ddqn_training_rewards00 = pickle.load(open("pickle files/dqn_rewards_0.0",'rb'))
         ddqn_training_rewards05 = pickle.load(open("pickle files/dqn_rewards_0.5",'rb'))
         ddqn_training_rewards10 = pickle.load(open("pickle files/dqn_rewards_1.0",'rb'))
@@ -197,6 +197,11 @@ def main(argv):
         a2c_training_rewards20k = pickle.load(open("pickle files/a2c_training_rewards20k",'rb'))
         a2c_training_rewards5k = pickle.load(open("pickle files/a2c_training_rewards5k",'rb'))
 
+        # Plot all metrics together
+        plotter.average_episodic_plot_all(a2c_training_rewards5k, a2c_training_rewards20k, ddqn_training_rewards00, ddqn_training_rewards05, ddqn_training_rewards10, "Reward", "A2C (5k 1024n)", "A2C (20k 2048n)", "DQN (0.0)", "DQN (0.5)", "DQN (1.0)")
+        plotter.episodic_plot_all(a2c_training_rewards5k, a2c_training_rewards20k, ddqn_training_rewards00, ddqn_training_rewards05, ddqn_training_rewards10, "Reward", "A2C (5k 1024n)", "A2C (20k 2048n)", "DQN (0.0)", "DQN (0.5)", "DQN (1.0)")
+        
+        # Plot metrics individually
         for ddqn_training_reward, alpha in zip([ddqn_training_rewards00, ddqn_training_rewards05, ddqn_training_rewards10], [0.0, 0.5, 1.0]):
             plotter.average_episodic_plot(a2c_training_rewards5k, ddqn_training_reward, "Reward", "A2C (5k 1024n)", f"DQN ({alpha})")
             plotter.episodic_plot(a2c_training_rewards5k, ddqn_training_reward, "Reward", "A2C (5k 1024n)", f"DQN ({alpha})")
