@@ -44,7 +44,9 @@ def main(argv):
     env.config["observation"] = {
         "type": "Kinematics",
         "vehicles_count": 15,
-        "features": ["presence", "x", "y", "vx", "vy", "heading"]
+        "features": ["presence", "x", "y", "vx", "vy", "heading", "cos_h", "sin_h"],
+        "order": "sorted",
+        "normalize": True,
     }
     env.reset()
     
@@ -112,6 +114,7 @@ def main(argv):
 
             # Training max reward
             print("Max A2C training reward achieved:", a2c_training_max_reward)
+            # 45.484330484330485
 
             pickle.dump(a2c_training_action_distribution, open("a2c_action_dist",'wb'))
             pickle.dump(a2c_training_rewards, open("a2c_training_rewards",'wb'))
