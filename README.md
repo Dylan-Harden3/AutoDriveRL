@@ -21,11 +21,20 @@ python3 main.py -s 5000 -n 1024 -l 0.0001 -g 0.99 -d 90 -E 0.9 -m 1000 -N 100 -B
 ```
 And for Testing:
 ```bash
-python3 main.py -S dqn -M test
+python3 main.py -S dqn -M test -e 100 -t 1000
 ```
 ***Note that for -M test we expect there to already be trained models for all 3 alpha values (0.0, 0.5, 1.0). Our trained models are already saved.***
 
 #### A2C
+For Training:
+For DQN we used these hyperparameters with alpha set to 0.0, 0.5 and 1.0.
+```bash
+python3 main.py -s 20000 -n 2048 -l 0.0001 -g 0.99 -d 90 -S a2c -M train
+```
+And for Testing:
+```bash
+python3 main.py -S a2c -M test -e 100 -t 1000
+```
 
 ## Command-line Arguments
 You must specify the `-S` and `-M` flags to specify training and which solver or testing.
