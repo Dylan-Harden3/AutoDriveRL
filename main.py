@@ -22,10 +22,10 @@ def main(argv):
     solver = None
     mode = None
 
-    training_steps = 20000
+    training_steps = 5000
     testing_episodes = 100
     testing_steps = 1000
-    neurons = 2048
+    neurons = 1024
     lr = 0.0001
     gamma = 0.99
     duration = 90
@@ -93,13 +93,14 @@ def main(argv):
         print("Error: missing required args")
         sys.exit(2)
 
+    actor_critic = A2C(env=env, training_steps=training_steps, testing_steps=testing_steps, hidden_neurons=neurons, lr=lr, gamma=gamma)
+    actor_critic_baseline = A2CBaseline(env=env, training_steps=training_steps, testing_steps=testing_steps, lr=lr, gamma=gamma)
+    plotter = Plotting()
+    ddqn = DDQN(env, training_steps, testing_steps, neurons, lr, gamma, epsilon, replay_memory_size, batch_size, update_target_every)
+            
     if mode == 'train':
         # Training A2C
         if solver == 'a2c':
-            actor_critic = A2C(env=env, training_steps=training_steps, testing_steps=testing_steps, hidden_neurons=neurons, lr=lr, gamma=gamma)
-            actor_critic_baseline = A2CBaseline(env=env, training_steps=training_steps, testing_steps=testing_steps, lr=lr, gamma=gamma)
-            plotter = Plotting()
-
             print("A2C Training")
             a2c_training_action_distribution, a2c_training_rewards, a2c_training_max_reward = actor_critic.train_episode()
             env.reset()
@@ -116,7 +117,6 @@ def main(argv):
             pickle.dump(a2c_training_rewards, open("a2c_training_rewards",'wb'))
 
         elif solver == 'ddqn':
-            ddqn = DDQN(env, training_steps, testing_steps, neurons, lr, gamma, epsilon, replay_memory_size, batch_size, update_target_every)
             print("DDQN Training")
             ddqn_training_action_distribution, ddqn_training_rewards, ddqn_training_max_reward = ddqn.train_episode()
             env.reset()
@@ -126,26 +126,26 @@ def main(argv):
 
             pickle.dump(ddqn_training_action_distribution, open("ddqn_action_dist",'wb'))
             pickle.dump(ddqn_training_rewards, open("ddqn_training_rewards",'wb'))
-        
-        # Plotting DDQN vs. A2C Training
-        # plotter.average_episodic_plot(a2c_training_rewards, ddqn_training_rewards, "Reward", "A2C", "DQN")
-        # plotter.episodic_plot(a2c_training_rewards, ddqn_training_rewards, "Reward", "A2C", "DQN")
-        # plotter.bar_graph(a2c_training_action_distribution, ddqn_training_action_distribution, "A2C", "DQN")
 
     elif mode == 'test':
         # Testing A2C
         print("A2C Prediction")
         a2c_model = models.load_model("saved models/a2c_model.h5")
-        a2c_average_reward = prediction(episodes=testing_episodes, agent=actor_critic, duration=duration, model=a2c_model)
+        a2c_average_reward = prediction(episodes=testing_episodes, agent=actor_critic, model=a2c_model)
 
         # Testing baseline A2C
         print("A2C Baseline Prediction")
         a2c_baseline_model = A2C3.load("saved models/a2c_baseline")
-        a2c_baseline_average_reward = prediction(episodes=testing_episodes, agent=actor_critic_baseline, duration=duration, model=a2c_baseline_model)
+        a2c_baseline_average_reward = prediction(episodes=testing_episodes, agent=actor_critic_baseline, model=a2c_baseline_model)
     
         # Evaluation average reward
         print("Average A2C reward achieved:", a2c_average_reward)
         print("Average A2C baseline reward achieved:", a2c_baseline_average_reward)
+
+    # # Plotting DDQN vs. A2C Training
+    # plotter.average_episodic_plot(a2c_training_rewards, "Reward", "A2C")
+    # plotter.episodic_plot(a2c_training_rewards, "Reward", "A2C")
+    # plotter.bar_graph(a2c_training_action_distribution, "A2C")
 
 
 

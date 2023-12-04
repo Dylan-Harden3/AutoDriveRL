@@ -5,6 +5,7 @@ import time
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+from keras.utils import plot_model
 
 
 
@@ -38,6 +39,8 @@ class A2C():
         model = keras.Model(inputs=inputs, outputs=[actor, critic])
         return model
 
+    def plot(self):
+        plot_model(self.actor_critic, to_file='a2c_network.png', show_shapes=True, show_layer_names=False, show_layer_activations=True)
 
     def select_action(self, state):
         ego_probs, value = self.actor_critic(state)

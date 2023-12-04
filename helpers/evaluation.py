@@ -6,7 +6,7 @@ from tensorflow import keras
 from agents.a2c import A2C
 from baselines.a2c_baseline import A2CBaseline
 
-def prediction(episodes, agent, duration, model):
+def prediction(episodes, agent, model):
     episode_rewards = []
     for episode in range(1, episodes + 1):
         print("Episode: ", episode)
