@@ -26,7 +26,6 @@ python3 main.py -S dqn -M test -e 100 -t 1000
 
 #### A2C
 For Training:
-For DQN we used these hyperparameters with alpha set to 0.0, 0.5 and 1.0.
 ```bash
 python3 main.py -s 20000 -n 2048 -l 0.0001 -g 0.99 -d 90 -S a2c -M train
 ```
