@@ -13,7 +13,7 @@ class A2CBaseline():
 
     def train_model(self):
         self.model.learn(total_timesteps=self.training_steps, progress_bar=True)
-        self.model.save("saved models/a2c_baseline")
+        self.model.save("saved models/a2c_baseline20k")
     
     def model_predict(self, model):
         total_reward = 0

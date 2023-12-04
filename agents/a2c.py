@@ -98,7 +98,7 @@ class A2C():
                 else:
                     state = next_state
 
-        self.actor_critic.save("saved models/a2c_model.h5")
+        self.actor_critic.save("saved models/a2c_model20k.h5")
         return action_distribution, rewards, max_episode_reward
 
     def model_predict(self, model):

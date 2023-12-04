@@ -24,11 +24,10 @@ def main(argv):
     solver = None
     mode = None
 
-    training_steps = 5000
-    training_steps = 5000
+    training_steps = 20000
     testing_episodes = 100
     testing_steps = 1000
-    neurons = 1024
+    neurons = 2048
     lr = 0.0001
     gamma = 0.99
     duration = 90
@@ -104,11 +103,11 @@ def main(argv):
         print("Error: missing required args")
         sys.exit(2)
 
-    actor_critic = A2C(env=env, training_steps=training_steps, testing_steps=testing_steps, hidden_neurons=neurons, lr=lr, gamma=gamma)
-    actor_critic_baseline = A2CBaseline(env=env, training_steps=training_steps, testing_steps=testing_steps, lr=lr, gamma=gamma)
+    actor_critic = A2C(env, training_steps, testing_steps, neurons, lr, gamma)
+    actor_critic_baseline = A2CBaseline(env, training_steps, testing_steps, lr, gamma)
     plotter = Plotting()
-    ddqn = DDQN(env, training_steps, testing_steps, neurons, lr, gamma, epsilon, replay_memory_size, batch_size, update_target_every)
-            
+    ddqn_baseline = DQNBaseline(env, training_steps, testing_steps)
+
     if mode == 'train':
         # Training A2C
         if solver == 'a2c':
@@ -123,67 +122,87 @@ def main(argv):
 
             # Training max reward
             print("Max A2C training reward achieved:", a2c_training_max_reward)
-            # 45.484330484330485
 
-            pickle.dump(a2c_training_action_distribution, open("a2c_action_dist",'wb'))
-            pickle.dump(a2c_training_rewards, open("a2c_training_rewards",'wb'))
+            pickle.dump(a2c_training_action_distribution, open("a2c_action_dist20k",'wb'))
+            pickle.dump(a2c_training_rewards, open("a2c_training_rewards20k",'wb'))
 
         elif solver == 'dqn':
-        #     dqn = DQN(env, training_steps, testing_steps, neurons, lr, gamma, epsilon, replay_memory_size, batch_size, update_target_every)
-        #     print("DQN Training")
-        #     ddqn_training_action_distribution, ddqn_training_rewards, ddqn_training_max_reward = ddqn.train_episode()
+            print("DQN Training")
+            
+            for alpha in [1.0, 0.5, 0.0]:
+                ddqn = DQN(env, training_steps, testing_steps, neurons, lr, gamma, epsilon, replay_memory_size, batch_size, update_target_every, per_alpha, num_layers)
+                ddqn_training_action_distribution, ddqn_training_rewards = ddqn.train_episode()
+                pickle.dump(ddqn_training_rewards, open(f"dqn_rewards_{alpha}",'wb'))
+                pickle.dump(ddqn_training_action_distribution, open(f"dqn_action_dist_{alpha}",'wb'))
+            
             env.reset()
 
-            # Training max reward
-            # print("Max DQN training reward achieved:", ddqn_training_max_reward)
-
-            # pickle.dump(ddqn_training_action_distribution, open("ddqn_action_dist",'wb'))
-            # pickle.dump(ddqn_training_rewards, open("ddqn_training_rewards",'wb'))
-            dqn_baseline = DQNBaseline(env=env, training_steps=training_steps, testing_steps=testing_steps)
-            dqn_baseline.train_model()
-
-        # Plotting DQN vs. A2C Training
-        # plotter.average_episodic_plot(a2c_training_rewards, ddqn_training_rewards, "Reward", "A2C", "DQN")
-        # plotter.episodic_plot(a2c_training_rewards, ddqn_training_rewards, "Reward", "A2C", "DQN")
-        # plotter.bar_graph(a2c_training_action_distribution, ddqn_training_action_distribution, "A2C", "DQN")
+            print("Baseline Training")
+            ddqn_baseline.train_model()
+            env.reset()
 
     elif mode == 'test':
-        # Testing A2C
-        # print("A2C Prediction")
-        # a2c_model = models.load_model("saved models/a2c_model.h5")
-        # a2c_average_reward = prediction(episodes=testing_episodes, agent=actor_critic, duration=duration, model=a2c_model)
+        if solver == 'a2c':
+            # Testing A2C
+            print("A2C Prediction")
+            a2c_model = models.load_model("saved models/a2c_model.h5")
+            a2c_average_reward = prediction(episodes=testing_episodes, agent=actor_critic, model=a2c_model)
 
-        # # Testing baseline A2C
-        # print("A2C Baseline Prediction")
-        # a2c_baseline_model = A2C3.load("saved models/a2c_baseline")
-        # a2c_baseline_average_reward = prediction(episodes=testing_episodes, agent=actor_critic_baseline, duration=duration, model=a2c_baseline_model)
-    
-        # # Evaluation average reward
-        # print("Average A2C reward achieved:", a2c_average_reward)
-        # print("Average A2C baseline reward achieved:", a2c_baseline_average_reward)
+            # Testing baseline A2C
+            print("A2C Baseline Prediction")
+            a2c_baseline_model = A2C3.load("saved models/a2c_baseline")
+            a2c_baseline_average_reward = prediction(episodes=testing_episodes, agent=actor_critic_baseline, model=a2c_baseline_model)
+        
+            # Evaluation average reward
+            print("Average A2C reward achieved:", a2c_average_reward)
+            print("Average A2C baseline reward achieved:", a2c_baseline_average_reward)
 
-        dqn_average_rewards = []
-        # Testing DQN
-        print("DQN Prediction")
-        dqn = DQN(env, training_steps, testing_steps, neurons, lr, gamma, epsilon, replay_memory_size, batch_size, update_target_every, per_alpha, num_layers)
-        for alpha in [1.0, 0.5, 0.0]:
-            dqn_model = models.load_model(f"saved models/dqn_model_{alpha}.h5")
-            print(dqn_model.summary())
-            dqn_average_rewards.append(prediction(episodes=testing_episodes, agent=dqn, duration=duration, model=dqn_model))
+            pickle.dump(dqn_average_rewards, open("A2C_Testing_Rewards", "wb"))
+            pickle.dump(dqn_baseline_average_reward, open("A2C_Baseline_Testing_Rewards", "wb"))
 
-        # Testing baseline DQN
-        print("DQN Baseline Prediction")
-        dqn_baseline = DQNBaseline(env, training_steps, testing_steps)
-        dqn_baseline_model = DQN_Baseline.load("saved models/dqn_baseline")
-        dqn_baseline_average_reward = prediction(episodes=testing_episodes, agent=dqn_baseline, duration=duration, model=dqn_baseline_model)
-    
-        # Evaluation average reward
-        print("Average DQN rewards achieved:", dqn_average_rewards)
-        print("Average DQN baseline reward achieved:", dqn_baseline_average_reward)
+        elif solver == 'ddqn':
+            dqn_average_rewards = []
+            # Testing DQN
+            print("DQN Prediction")
+            for alpha in [1.0, 0.5, 0.0]:
+                dqn_model = models.load_model(f"saved models/dqn_model_{alpha}.h5")
+                print(dqn_model.summary())
+                dqn_average_rewards.append(prediction(episodes=testing_episodes, agent=ddqn, model=dqn_model))
 
-        pickle.dump(dqn_average_rewards, open("DQN_Testing_Rewards", "wb"))
-        pickle.dump(dqn_baseline_average_reward, open("DQN_Baseline_Testing_Rewards", "wb"))
+            # Testing baseline DQN
+            print("DQN Baseline Prediction")
+            dqn_baseline_model = DQN_Baseline.load("saved models/dqn_baseline")
+            dqn_baseline_average_reward = prediction(episodes=testing_episodes, agent=ddqn_baseline, model=dqn_baseline_model)
+        
+            # Evaluation average reward
+            print("Average DQN rewards achieved:", dqn_average_rewards)
+            print("Average DQN baseline reward achieved:", dqn_baseline_average_reward)
 
+            pickle.dump(dqn_average_rewards, open("DQN_Testing_Rewards", "wb"))
+            pickle.dump(dqn_baseline_average_reward, open("DQN_Baseline_Testing_Rewards", "wb"))
+
+    elif mode == 'plot_both':
+        # Print DQN testing rewards
+        average_dqn_test = pickle.load(open("DQN_Testing_Rewards",'rb'))
+        baseline_dqn_test = pickle.load(open("DQN_Baseline_Testing_Rewards",'rb'))
+
+        print("Average DQN Test", average_dqn_test)
+        print("Baseline DQN Test", baseline_dqn_test)
+
+        # Plotting DQN vs. A2C Training
+        ddqn_training_rewards00 = pickle.load(open("dqn_rewards_0.0",'rb'))
+        ddqn_training_rewards05 = pickle.load(open("dqn_rewards_0.5",'rb'))
+        ddqn_training_rewards10 = pickle.load(open("dqn_rewards_1.0",'rb'))
+
+        a2c_training_rewards20k = pickle.load(open("a2c_training_rewards20k",'rb'))
+        a2c_training_rewards5k = pickle.load(open("a2c_training_rewards5k",'rb'))
+
+        for ddqn_training_reward, alpha in zip([ddqn_training_rewards00, ddqn_training_rewards05, ddqn_training_rewards10], [0.0, 0.5, 1.0]):
+            plotter.average_episodic_plot(a2c_training_rewards5k, ddqn_training_reward, "Reward", "A2C (5k 1024n)", f"DQN ({alpha})")
+            plotter.episodic_plot(a2c_training_rewards5k, ddqn_training_reward, "Reward", "A2C (5k 1024n)", f"DQN ({alpha})")
+            plotter.average_episodic_plot(a2c_training_rewards20k, ddqn_training_reward, "Reward", "A2C (20k 2048n)", f"DQN ({alpha})")
+            plotter.episodic_plot(a2c_training_rewards20k, ddqn_training_reward, "Reward", "A2C (20k 2048n)", f"DQN ({alpha})")
+        
 
 if __name__ == "__main__":
     main(sys.argv[1:])

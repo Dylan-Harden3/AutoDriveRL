@@ -6,6 +6,7 @@ from collections import deque
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+from keras.utils import plot_model
 
 
 class DQN():
@@ -27,6 +28,9 @@ class DQN():
         for layer in self.target_model.layers:
             layer.trainable = False
 
+    def plot(self):
+        plot_model(self.model, to_file='ddqn_network.png', show_shapes=True, show_layer_names=False, show_layer_activations=True)
+
     def q_network(self, input_shape, hidden_neurons, num_actions, num_layers):
         inputs = keras.Input(input_shape, name="input_layer")
         flattened = layers.Flatten()(inputs)
@@ -44,7 +48,7 @@ class DQN():
         q_values = self.model(state)
         a = tf.argmax(q_values, axis=1)[0]
         num_actions = self.env.action_space.n
-        epsilon = np.clip(self.initial_epsilon - (self.initial_epsilon) * (current_step / 5000), 0.0, self.initial_epsilon) # decay epsilon over first 5000 steps
+        epsilon = np.clip(self.initial_epsilon - (self.initial_epsilon) * (step / 5000), 0.0, self.initial_epsilon) # decay epsilon over first 5000 steps
         return np.array([1 - epsilon + (epsilon / num_actions) if i == a else epsilon / num_actions for i in range(num_actions)])
 
     def compute_target_values(self, next_states, rewards, dones):
