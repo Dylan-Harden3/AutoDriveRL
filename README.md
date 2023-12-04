@@ -1,6 +1,6 @@
 # CSCE 642 Project
 ## Setup
-You can setup the environment using conda + pip or virtual env + pip, Python version 3.10.12 is required.
+You can set up the environment using conda + pip or virtual env + pip, Python version 3.10.12 is required.
 
 To install the packages run
 ```bash
@@ -45,7 +45,7 @@ python3 main.py -S <any_solver> -M plot_both
 You must specify the `-S` and `-M` flags to specify training and which solver or testing.
 All other arguments are optional and have default values configured as described below.
 To list out all the arguments you can use the `-h` flag.
-| Argument | Description                                                                                    | Defualt Value |
+| Argument | Description                                                                                    | Default Value |
 |----------|------------------------------------------------------------------------------------------------|---------------|
 | `-e`     | Number of episodes for evaluation (only needed with `-M test`)                                 | 100           |
 | `-s`     | Number of environment steps to train for                                                       | 5000          |
