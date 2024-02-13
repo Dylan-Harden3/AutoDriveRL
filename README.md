@@ -1,4 +1,9 @@
 # CSCE 642 Project
+
+<p align="center">
+    <img src="https://raw.githubusercontent.com/eleurent/highway-env/master/../gh-media/docs/media/highway-env.gif?raw=true"><br/>
+</p>
+
 ## Setup
 You can set up the environment using conda + pip or virtual env + pip, Python version 3.10.12 is required.
 
